@@ -1,0 +1,41 @@
+name: Atualizar Painel Nexo
+
+# Roda a rotina diária (login no Imobmeet -> extrai -> valida -> rebuild -> publica)
+# sem depender de nenhum computador local. Réplica em nuvem de automacao/atualizar.py
+# (ver automation/atualizar.py neste repositório, mesmo script com GIT_INPLACE=1).
+on:
+  schedule:
+    - cron: '59 20 * * *'   # 17:59 America/Sao_Paulo (UTC-3, sem horário de verão)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependências
+        run: |
+          pip install -r automation/requirements.txt
+          playwright install --with-deps chrome
+
+      - name: Atualizar dados e publicar
+        env:
+          IMOBMEET_USER: ${{ secrets.IMOBMEET_USER }}
+          IMOBMEET_PASS: ${{ secrets.IMOBMEET_PASS }}
+          LOGIN_MODE: auto
+          DRY_RUN: '0'
+          GIT_INPLACE: '1'
+        run: python automation/atualizar.py
+
+      - name: Log em caso de falha
+        if: failure()
+        run: cat automation/log.txt || true
