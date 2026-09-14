@@ -46,9 +46,13 @@ script reproduz em Python em vez de fazer manualmente/ad-hoc):
      dados/rows.json ou publicar
   4. python rebuild2.py
   5. copia pra index.html com os metas noindex
-  6. publica em alexsborne/huna (clone dedicado desta automação, nunca a
+  6. confere qualidade/quantitativos (automacao/verificar_quantitativos.js — mesma
+     checagem usada pela skill atualizar_servidor: somas por etapa/responsável/equipe,
+     n_tags, Previsão x Execução, sintaxe do HTML gerado) — falha aqui aborta ANTES de
+     publicar, igual às validações do passo 3
+  7. publica em alexsborne/huna (clone dedicado desta automação, nunca a
      pasta de trabalho do usuário)
-  7. grava log com timestamp e resumo em automacao/log.txt
+  8. grava log com timestamp e resumo em automacao/log.txt
 """
 import os
 import re
@@ -650,6 +654,21 @@ def rebuild(panel='pasta'):
     log('rebuild2.py: ' + out.strip())
 
 
+def verificar_quantitativos():
+    """Roda automacao/verificar_quantitativos.js — a mesma conferência de qualidade/somatórios
+    entre abas que a skill atualizar_servidor usa — contra dados/rows.json e o HTML recém-gerado.
+    Devolve (ok, saida). Sem isso, uma rotina agendada (Task Scheduler/GitHub Actions) publicaria
+    direto sem passar pelo mesmo crivo que uma execução manual via skill passa (é exatamente o que
+    aconteceu antes de existir este script: a v4.16 quase foi ao ar com a tabela SIENA2 desatualizada
+    e um bug de sintaxe, os dois só achados por revisão manual)."""
+    script = AUTOMACAO_DIR / 'verificar_quantitativos.js'
+    if not script.exists():
+        log('aviso: automacao/verificar_quantitativos.js não encontrado — pulando conferência de qualidade.')
+        return True, ''
+    r = subprocess.run(['node', str(script), str(BASE)], capture_output=True, text=True, encoding='utf-8')
+    return r.returncode == 0, ((r.stdout or '') + (r.stderr or '')).strip()
+
+
 def inject_noindex(content):
     anchor = '<meta name="viewport" content="width=device-width,initial-scale=1">\n'
     metas = '<meta name="robots" content="noindex,nofollow,noarchive,noimageindex">\n<meta name="googlebot" content="noindex,nofollow">\n'
@@ -794,6 +813,13 @@ def main():
     rebuild()
     publish_index()
     log('index.html regenerado (com metas noindex).')
+
+    ok_verif, saida_verif = verificar_quantitativos()
+    log('conferência de qualidade/quantitativos:\n' + saida_verif)
+    if not ok_verif:
+        fail('conferência de qualidade/quantitativos entre abas falhou (ver log acima) — publicação '
+             'abortada. Causa mais comum: equipe/imobiliária nova fora das tabelas METAS/SIENA2 em '
+             'src/a1.js. Corrigir e rodar de novo (manualmente, ou via skill atualizar_servidor).')
 
     # Deliberado: mesmo em GIT_INPLACE (nuvem), só index.html é commitado — nunca
     # dados/rows.json nem contatos.tsv. São dados pessoais de clientes/corretores; já
