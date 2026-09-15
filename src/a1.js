@@ -188,7 +188,7 @@ const METAFORA=META_MERCADO_N+METAUNMAPPED.reduce((a,u)=>a+u.n,0);
    (ex. "DATA NEGOCIOS" no CRM = "DATA IMOVEIS" na planilha), por isso usa contém-palavra-chave, uma
    por uma conferida contra os prefixos de Mercado que de fato existem nos dados (11/09/2026). */
 const SIENA2=[
-  {imob:'AEVO',     meta:70, keys:null},
+  {imob:'AEVO',     meta:60, keys:null},
   {imob:'Adão',     meta:60, keys:null},
   {imob:'MyBroker', meta:20, keys:null},
   {imob:'HUNA',     meta:45, keys:null},
