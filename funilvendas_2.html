@@ -28,6 +28,12 @@
   --bg:#0d0f16; --card:#171a24; --line:#2b2f42;
   --tint:rgba(165,180,252,.14); --tint-line:rgba(165,180,252,.30); --stripe:#1c2030; --hdr-sub:#c7cdf0; --warn-bg:rgba(217,119,6,.16);
 }
+:root[data-theme="nexo-noite"]{  /* versão escura do tema Nexo: mesmos azuis-marinho da marca */
+  --navy:#9fb0ff; --navy-d:#1F2A66; --navy-l:#2E3D8C;
+  --ink:#eef1ff; --ink-2:#b4bce6; --ink-3:#7c86b8;
+  --bg:#0a0f2e; --card:#141c47; --line:#28336e;
+  --tint:rgba(159,176,255,.14); --tint-line:rgba(159,176,255,.30); --stripe:#18215a; --hdr-sub:#c9cfe8; --warn-bg:rgba(217,119,6,.16);
+}
 :root[data-theme="abissal"]{
   --navy:#5eead4; --navy-d:#115e59; --navy-l:#0d9488;
   --ink:#e6f7f4; --ink-2:#9fc4bb; --ink-3:#63897f;
@@ -293,7 +299,7 @@ body.side-shut{--sideW:68px}
 .wrap{padding-left:calc(var(--sideW) + 20px);transition:padding-left .22s ease}
 
 #side{position:fixed;left:0;top:0;bottom:0;width:252px;z-index:65;overflow-y:auto;overflow-x:hidden;
-  background:linear-gradient(178deg,var(--navy-d),var(--navy-l));color:var(--hdr-sub);padding:20px 14px 16px;
+  background:var(--navy-d);color:var(--hdr-sub);padding:20px 14px 16px;
   display:flex;flex-direction:column;gap:22px;box-shadow:6px 0 24px -12px rgba(20,28,71,.5);
   transition:transform .22s ease,width .22s ease,visibility 0s}
 
@@ -327,7 +333,7 @@ body.side-shut{--sideW:68px}
 
 /* restaurar o menu quando oculto: dois botões na borda esquerda (menu completo / só ícones) */
 .side-peek{display:none;position:fixed;z-index:66;left:0;top:50%;transform:translateY(-50%);flex-direction:column;gap:2px;padding:6px 3px 6px 0;
-  border-radius:0 12px 12px 0;background:linear-gradient(180deg,var(--navy-d),var(--navy-l));box-shadow:4px 0 18px rgba(0,0,0,.28)}
+  border-radius:0 12px 12px 0;background:var(--navy-d);box-shadow:4px 0 18px rgba(0,0,0,.28)}
 .side-peek button{appearance:none;width:32px;height:34px;padding:0;border:0;border-radius:0 8px 8px 0;background:none;color:#fff;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center}
 .side-peek button:hover,.side-peek button:focus-visible{background:rgba(255,255,255,.2);outline:none}
@@ -371,6 +377,12 @@ body.side-shut{--sideW:68px}
   .side-info{display:none}
 }
 @media(max-width:480px){.wrap{padding-left:12px}}
+/* área superior: cor única (azul mais escuro do tema), sem degradê — só no funilvendas_2; o head2.html compartilhado continua com degradê */
+#hdr{background:var(--navy-d)}
+/* Nexo Noite: o azul mais escuro do tema é o do fundo (#0a0f2e), não o --navy-d (#1F2A66); borda fina separa do conteúdo */
+:root[data-theme="nexo-noite"] #hdr,:root[data-theme="nexo-noite"] #side,:root[data-theme="nexo-noite"] .side-peek{background:#0a0f2e}
+:root[data-theme="nexo-noite"] #hdr{border-bottom:1px solid var(--line)}
+:root[data-theme="nexo-noite"] #side{border-right:1px solid var(--line)}
 @media(prefers-reduced-motion:reduce){#side,.wrap,#hdr{transition:none}}
 @media print{#side,.side-peek,#navBtn,#sideScrim{display:none!important}.wrap{padding-left:20px}#hdr{left:0!important}}
 /* ===== filtros do funilvendas_2 — mesmo padrão do funilvendas_novo_claude.html =====
@@ -500,6 +512,7 @@ body.shrunk .logo-svg{width:67px}
 .brand-side .logo-svg{width:125px}
 @media(max-width:760px){.logo-svg{width:76px}}
 @media print{.logo-svg{filter:none}}
+.logo-home{display:inline-flex;color:inherit;border-radius:8px;cursor:pointer;transition:opacity .15s}.logo-home:hover{opacity:.85}.logo-home:focus-visible{outline:2px solid #fff;outline-offset:3px}
 /* ===== tabelas zebradas (Funil de Venda) =====
    Linhas ímpares no fundo do card, pares com um tom do azul do tema — acompanha os 5 temas.
    O hover fica mais forte que o zebrado. Injetado só por rebuild_vendas.py / rebuild_vendas_2.py
@@ -574,13 +587,9 @@ tbody tr.rsel td{font-weight:650}
 .legend.cl{margin:0 0 8px}
 .legend i.bars{background:linear-gradient(90deg,#2a78d6 0 33%,#1baf7a 33% 66%,#eda100 66%);}
 /* ===== gráficos em vidro (glassmorphism) + seletor de tipo de gráfico ===== */
-/* fundo com manchas de cor: é o que o vidro desfoca e deixa "brilhar" por trás dos cartões */
-body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:0;z-index:-1;pointer-events:none;
-  background:
-    radial-gradient(42vw 42vw at 10% 6%,rgba(79,107,237,.24),transparent 70%),
-    radial-gradient(36vw 36vw at 92% 14%,rgba(242,114,75,.18),transparent 70%),
-    radial-gradient(42vw 42vw at 74% 96%,rgba(20,184,166,.20),transparent 70%),
-    radial-gradient(32vw 32vw at 6% 88%,rgba(229,96,155,.15),transparent 70%)}
+/* fundo das telas: uma cor só (var(--bg) — no tema padrão é o cinza claro #f4f5f8), sem as manchas coloridas
+   que existiam aqui até 01/10/2026 (pedido do usuário) */
+body::before{content:none}
 
 .card.glass{position:relative;isolation:isolate;overflow:hidden;
   background:linear-gradient(135deg,rgba(255,255,255,.74),rgba(255,255,255,.40));
@@ -596,14 +605,14 @@ body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:0;z-index:-1;
 /* filete de luz na borda superior */
 .card.glass::after{content:"";position:absolute;left:8%;right:8%;top:0;height:1px;pointer-events:none;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.98),transparent)}
-:root[data-theme="midnight"] .card.glass,:root[data-theme="abissal"] .card.glass{
+:root[data-theme="nexo-noite"] .card.glass,:root[data-theme="abissal"] .card.glass{
   background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.03));
   background:linear-gradient(135deg,color-mix(in srgb,var(--card) 66%,transparent),color-mix(in srgb,var(--card) 34%,transparent));
   border-color:rgba(255,255,255,.14);
   box-shadow:0 14px 40px -14px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(255,255,255,.04)}
-:root[data-theme="midnight"] .card.glass::before,:root[data-theme="abissal"] .card.glass::before{
+:root[data-theme="nexo-noite"] .card.glass::before,:root[data-theme="abissal"] .card.glass::before{
   background:linear-gradient(160deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.04) 30%,rgba(255,255,255,0) 55%)}
-:root[data-theme="midnight"] .card.glass::after,:root[data-theme="abissal"] .card.glass::after{
+:root[data-theme="nexo-noite"] .card.glass::after,:root[data-theme="abissal"] .card.glass::after{
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent)}
 
 /* seletor do tipo de gráfico */
@@ -632,10 +641,10 @@ body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:0;z-index:-1;
   <div class="hdr-in">
     <button type="button" id="navBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="side" title="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
     <div class="brand">
-      <div class="logo"><svg class="logo-svg" viewBox="0 0 508.6 189.5" role="img" aria-label="Nexo Gestão Imobiliária"><use href="#nexoLogo" width="508.6" height="189.5"/></svg></div>
+      <div class="logo"><a class="logo-home" href="index.html" title="Voltar à página inicial" aria-label="Voltar à página inicial"><svg class="logo-svg" viewBox="0 0 508.6 189.5" role="img" aria-label="Nexo Gestão Imobiliária"><use href="#nexoLogo" width="508.6" height="189.5"/></svg></a></div>
       <div class="stamp" title="Data e hora em que esta página foi gerada">
         <span class="lb">Atualizado em</span>
-        <span class="dt">01/10/2026 18:46</span>
+        <span class="dt">01/10/2026 23:49</span>
       </div>
     </div>
     <div class="hd">
@@ -650,7 +659,7 @@ body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:0;z-index:-1;
 </div>
 <div id="spacer"></div>
 <aside id="side" aria-label="Seções do painel">
-  <div class="brand-side"><div class="logo"><svg class="logo-svg" viewBox="0 0 508.6 189.5" role="img" aria-label="Nexo Gestão Imobiliária"><use href="#nexoLogo" width="508.6" height="189.5"/></svg></div><div><div class="brand-t">Funil de Venda — Empreendimentos</div><div class="brand-s">CRM Imobmeet · TAJ Empreendimentos</div></div></div>
+  <div class="brand-side"><div class="logo"><a class="logo-home" href="index.html" title="Voltar à página inicial" aria-label="Voltar à página inicial"><svg class="logo-svg" viewBox="0 0 508.6 189.5" role="img" aria-label="Nexo Gestão Imobiliária"><use href="#nexoLogo" width="508.6" height="189.5"/></svg></a></div><div><div class="brand-t">Funil de Venda — Empreendimentos</div><div class="brand-s">CRM Imobmeet · TAJ Empreendimentos</div></div></div>
   <nav><div class="tabs-in" id="tabsIn" role="tablist"></div></nav>
   <div class="side-foot"><div class="side-info"><span class="lb">Base de dados</span>Extraído em <b>01/10/2026</b><br><b id="sTot">0</b> cadastros · <b id="sTags">0</b> tags</div><button type="button" class="side-toggle" id="sideToggle" aria-expanded="true" title="Recolher o menu lateral"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg><span>Recolher menu</span></button><button type="button" class="side-toggle" id="sideHide" title="Ocultar o menu por completo (só o relatório, em largura total)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4v16M8 8l-4 4 4 4M21 12H8"/></svg><span>Ocultar menu</span></button></div>
 </aside>
@@ -941,7 +950,7 @@ const FAIXAS_NEG=["0 / não informado","até R$ 400 mil","R$ 400–500 mil","R$ 
 /* ===== temas (mesmo mecanismo do Funil de Pasta) ===== */
 const THEMES=[
   {id:'nexo',label:'Nexo (padrão)'},
-  {id:'midnight',label:'Meia-Noite'},
+  {id:'nexo-noite',label:'Nexo Noite'},
   {id:'abissal',label:'Abissal'},
   {id:'bordo',label:'Bordô'},
   {id:'terracota',label:'Terracota'}
