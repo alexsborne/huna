@@ -644,7 +644,7 @@ body::before{content:none}
       <div class="logo"><a class="logo-home" href="index.html" title="Voltar à página inicial" aria-label="Voltar à página inicial"><svg class="logo-svg" viewBox="0 0 508.6 189.5" role="img" aria-label="Nexo Gestão Imobiliária"><use href="#nexoLogo" width="508.6" height="189.5"/></svg></a></div>
       <div class="stamp" title="Data e hora em que esta página foi gerada">
         <span class="lb">Atualizado em</span>
-        <span class="dt">02/10/2026 07:58</span>
+        <span class="dt">02/10/2026 09:47</span>
       </div>
     </div>
     <div class="hd">
@@ -675,6 +675,7 @@ body::before{content:none}
   </div>
 
   <div id="panels">
+    <div class="card" id="multiProd" style="margin:0 0 14px;border-left:4px solid var(--navy)"><p class="ch-t" style="margin:0 0 4px">Esta tela analisa 7 produtos ao mesmo tempo</p><p class="ch-s" style="margin:0">Todos os números, gráficos e tabelas somam os cadastros destes produtos do Funil de Venda: 108 FAZENDA VILLAGIO TEXAS (2.775), 85 VILLAGIO SIENA (753), 90 VILLAGIO VENETO (555), 97 VILLAGIO SIENA ( LOTES BRDU ) (35), 94 RESERVA DO PARQUE II (22), 27 VERONA I (2), 93 RESERVA DO PARQUE I (2). Para ver um produto só, ou comparar alguns, use o filtro <b>Produto</b> (botão Filtros, no topo); ele vale para todas as abas. Exceção: a aba <b>Previsão x Execução</b> usa a planilha de metas por imobiliária, que hoje só existe para os produtos de Villagio Siena (85 e 97). Por isso ela conta só os cadastros desses dois produtos.</p></div>
 
   <section class="panel" data-tab="visao">
     <h2 class="sec">Indicadores</h2>
@@ -813,14 +814,14 @@ body::before{content:none}
 
   <section class="panel" data-tab="previsao2">
     <h2 class="sec">Previsão x Execução — por Imobiliária</h2>
-    <p class="hint">Mesma expectativa de cadastros por imobiliária usada no Painel do Funil de Pasta, planilha "Expectativa de vendas - SIENA" (Lançadoras e Mercado, fornecida pelo usuário em 11/09/2026) — meta acumulada do funil inteiro, sem período. A execução conta cadastros de Villagio Siena no Funil de Venda (produtos 85 e 97 juntos) e agora respeita todos os filtros do topo (Passo, Produto, Mês, Equipe...), além do filtro "Imobiliária" (Lançadora x Mercado).</p>
+    <p class="hint">Compara a meta de cadastros de cada imobiliária (Lançadoras e Mercado) com o que já entrou no Funil de Venda. A meta é acumulada, sem período. <b>Atenção:</b> a planilha de metas só existe para Villagio Siena, então esta aba conta apenas os cadastros dos produtos 85 e 97; os demais produtos da tela ficam de fora daqui. Os filtros do topo (Passo, Produto, Mês, Equipe, Imobiliária…) continuam valendo.</p>
     <div class="grid kpis" id="prev2Kpis"></div>
     <p class="hint" id="nPrev2Sel"></p>
 
     <h2 class="sec">Quem está mais perto da expectativa</h2>
     <div class="card"><p class="ch-t">Meta x execução por imobiliária</p><p class="ch-s">Lançadoras e Mercado juntos, ordenados da imobiliária mais próxima (ou acima) da meta para a mais distante.</p>
       <div class="cbox tall scroll" id="boxPrev2Imob"><div class="cbox-inner" id="innerPrev2Imob"><canvas id="cPrev2Imob"></canvas></div></div><p class="note" id="nPrev2Imob"></p>
-      <button class="btn sec xs chart-export" data-chart="cPrev2Imob" data-title="Meta x execução por imobiliária (SIENA)">Exportar Excel</button></div>
+      <button class="btn sec xs chart-export" data-chart="cPrev2Imob" data-title="Meta x execução por imobiliária">Exportar Excel</button></div>
 
     <h2 class="sec">Volume por hierarquia (mesmos gráficos da aba Times)</h2>
     <p class="hint">Imobiliária → Equipe → Gerente → Corretor → Cliente, calculados no mesmo recorte desta aba (filtros do topo + card selecionado acima). Clique numa barra pra restringir os níveis à direita; clique de novo pra recolher.</p>
@@ -849,13 +850,13 @@ body::before{content:none}
     </div>
 
     <h2 class="sec">Detalhamento por imobiliária</h2>
-    <div class="card"><p class="ch-s">Uma linha por imobiliária da planilha SIENA (Lançadoras e Mercado juntas).</p>
+    <div class="card"><p class="ch-s">Uma linha por imobiliária da planilha de metas (Lançadoras e Mercado juntas).</p>
       <div class="tbar" data-table="tPrev2" data-name="previsao_x_execucao_imobiliaria" data-title="Previsão x Execução por imobiliária"></div>
       <div class="tw"><table id="tPrev2"></table></div>
       <p class="note" id="nPrev2"></p></div>
 
     <h2 class="sec">Cadastros fora da previsão</h2>
-    <div class="card"><p class="ch-s">Equipes do Mercado com cadastros reais no CRM sem imobiliária correspondente na planilha SIENA.</p>
+    <div class="card"><p class="ch-s">Equipes do Mercado com cadastros reais no CRM sem imobiliária correspondente na planilha de metas.</p>
       <div class="tbar" data-table="tPrev2Fora" data-name="fora_da_previsao_imobiliaria" data-title="Cadastros fora da previsão"></div>
       <div class="tw"><table id="tPrev2Fora"></table></div>
       <p class="note" id="nPrev2Fora"></p></div>
@@ -886,9 +887,9 @@ body::before{content:none}
   </div>
 
   <footer>
-    <b>Fonte:</b> CRM Imobmeet — TAJ Empreendimentos e Participações S/A, Funil de Venda (ID 126), produtos 85 e 97 Villagio Siena, 90 Villagio Veneto, 108 Fazenda Villagio Texas, 94 e 93 Reserva do Parque II/I, 25 e 26 Verona II e 27 Verona I. A aba Previsão x Execução considera só os cadastros de Villagio Siena (85+97), porque a planilha de metas é dela. Use o filtro "Produto" no topo para ver um empreendimento, o outro, ou os dois juntos (padrão sem filtro = os dois). Extração em 02/10/2026.<br>
+    <b>Fonte:</b> CRM Imobmeet — TAJ Empreendimentos e Participações S/A, Funil de Venda (ID 126), 7 produtos analisados juntos (108 FAZENDA VILLAGIO TEXAS, 85 VILLAGIO SIENA, 90 VILLAGIO VENETO, 97 VILLAGIO SIENA ( LOTES BRDU ), 94 RESERVA DO PARQUE II, 27 VERONA I, 93 RESERVA DO PARQUE I). Use o filtro "Produto" para ver um produto só ou comparar alguns (sem filtro = todos). Extração em 02/10/2026.<br>
     <b>Método:</b> tags lidas do seletor de marcações da ficha de cada cadastro (somente as marcadas). Um cadastro pode ter várias tags, então a soma das tags é maior que o total de cadastros. "Tempo no passo atual" usa a data de última atualização do cadastro como proxy, na ausência de um histórico completo de trocas de etapa no CRM — ver aba "Tempo por Etapa".<br>
-    <b>Passos do funil</b> seguem a ordem configurada no quadro Kanban do Imobmeet para o Funil de Venda (Visita Espontânea → … → Contrato Finalizado / Venda Perdida / Descarte); só aparecem aqui os passos com pelo menos 1 cadastro de Village Siena.<br>
+    <b>Passos do funil</b> seguem a ordem configurada no quadro Kanban do Imobmeet para o Funil de Venda (Visita Espontânea → … → Contrato Finalizado / Venda Perdida / Descarte); só aparecem aqui os passos com pelo menos 1 cadastro de algum dos produtos analisados.<br>
     <b>Exportações</b> respeitam sempre os filtros, a ordenação e a busca ativos no momento do clique.<br>
     <span id="fMeta"></span>
   </footer>
@@ -935,7 +936,7 @@ const SIENA_PROD = new Set(PRODUTOS_LABEL);
 
 /* Ordem canônica dos passos do Funil de Venda, lida diretamente do quadro Kanban
    do Imobmeet (/leads/gestao/126) em 23/09/2026 — cobre TODOS os produtos do funil,
-   não só Village Siena; por isso a lista é maior do que os passos que de fato têm
+   não só Villagio Siena; por isso a lista é maior do que os passos que de fato têm
    cadastro de Siena hoje (ver ETAPAS abaixo, que filtra pelos presentes). */
 const ETAPAS_VENDA_TODAS = ["Visita Espontânea","Lead Recebido","Em atendimento","Lead Quente","Lead Frio",
   "Visita Agendada","Pré Cadastro","Negociação Corretor","Reserva","Proposta","Conferência BrDU","Pendente Nexo",
@@ -2319,7 +2320,7 @@ function paint(){
       row.f=[['imob_prev',s.imob]]; return row;
     });
     tbl('tPrev2',headPrev2,rowsPrev2,{k:5,d:-1});
-    document.getElementById('nPrev2').textContent=`${nf(dispSV.length)} de ${nf(SV.length)} imobiliária(s) da planilha SIENA no recorte. Ordenado pelo maior % atingido; clique no cabeçalho pra reordenar e numa linha para filtrar todas as telas.`;
+    document.getElementById('nPrev2').textContent=`${nf(dispSV.length)} de ${nf(SV.length)} imobiliária(s) da planilha de metas no recorte. Ordenado pelo maior % atingido; clique no cabeçalho pra reordenar e numa linha para filtrar todas as telas.`;
 
     const showFora = !ST.prev_grupo.length || wantFora;
     const foraRows2=(soLanc||!showFora)?[]:unmapped.map(u=>{ const p=t3Parts(u.equipe); const row=[u.equipe,{v:u.n}]; row.f=[['h_imob',p.imob],['h_eq',p.eq]]; return row; });
@@ -2329,7 +2330,7 @@ function paint(){
       ? 'Filtro "Lançadora" ativo — cadastros fora da previsão são sempre do Mercado.'
       : !showFora ? 'Selecione o card "Cadastros fora da previsão" acima (ou limpe o filtro) para ver esta tabela.'
       : foraRows2.length
-        ? `${nf(svFora)} cadastro(s) do Mercado sem imobiliária correspondente na planilha SIENA — não entram em "Execução mapeada" acima.`
+        ? `${nf(svFora)} cadastro(s) do Mercado sem imobiliária correspondente na planilha de metas — não entram em "Execução mapeada" acima.`
         : 'Todo cadastro do Mercado tem uma imobiliária correspondente na planilha.';
   } else if(TAB==='alertas'){
     alerts(rowsFor('alerta'));
