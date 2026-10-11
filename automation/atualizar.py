@@ -680,7 +680,7 @@ def inject_noindex(content):
 
 def publish_index():
     src_html = SRC / 'Painel_Funil_de_Pasta_Nexo.html'
-    (BASE / 'index.html').write_text(inject_noindex(src_html.read_text(encoding='utf-8')), encoding='utf-8')
+    (BASE / 'funilpastas.html').write_text(inject_noindex(src_html.read_text(encoding='utf-8')), encoding='utf-8')
 
 
 def publish_index_2():
@@ -700,7 +700,7 @@ def ensure_git_identity(target_dir):
 
 
 def git_publish(files=None):
-    files = files or ['index.html']
+    files = files or ['funilpastas.html']
     if DRY_RUN:
         log('DRY_RUN=1 — pulando publicação no GitHub.')
         return False
@@ -828,7 +828,7 @@ def main():
     # no runner do GitHub Actions o checkout é descartado a cada execução, então cada
     # rodada em nuvem faz extração cheia (sem "novos/sumiram" comparado à rodada anterior,
     # e rebusca contato de corretor mesmo já visto antes) — aceitável pelo volume atual.
-    publicou = git_publish(['index.html'])
+    publicou = git_publish(['funilpastas.html'])  # index.html é a landing — NUNCA sobrescrever/excluir (pedido do usuário, 10/10/2026)
     log('resumo: ' + resumo_diff(prev_rows, rows))
     dur = (datetime.datetime.now() - t0).total_seconds()
     log('==== fim (sucesso, {}publicado) — {:.1f}s ===='.format('' if publicou else 'NÃO ', dur))
