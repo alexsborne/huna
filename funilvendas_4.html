@@ -98,6 +98,9 @@ main{padding:22px 28px 80px;min-width:0}
 .facts div{background:var(--sheet);padding:10px 12px}
 .facts dt{font-size:12px;color:var(--ink3)}
 .facts dd{margin:2px 0 0;font:500 19px var(--cond)}
+.facts .wide{grid-column:1 / -1}
+.facts .wide dd{font-size:24px}
+.facts .wide small{display:block;font:400 12px var(--font);color:var(--ink3);margin-top:2px}
 
 /* abas de análise */
 .tabs{display:flex;gap:0;border-bottom:2px solid var(--ink);margin:34px 0 0;overflow-x:auto;scrollbar-width:thin;position:sticky;top:54px;background:var(--paper);z-index:10}
@@ -265,7 +268,7 @@ footer{color:var(--ink3);font-size:12.5px;border-top:1px solid var(--rule);margi
     <nav class="tabs" role="tablist" id="tabs" aria-label="Análises"></nav>
     <section class="sheet" id="sheet" role="tabpanel"></section>
 
-    <footer>Fonte: Funil de Venda (126) do Imobmeet, extração de 12/10/2026 23:21, painel gerado em 12/10/2026 23:22. Telefones e e-mails de clientes e corretores não estão nesta página. Os indicadores usam a etapa atual de cada cadastro; o Imobmeet não fornece o histórico de passagem pelas etapas.</footer>
+    <footer>Fonte: Funil de Venda (126) do Imobmeet, extração de 12/10/2026 23:21, painel gerado em 12/10/2026 23:34. Telefones e e-mails de clientes e corretores não estão nesta página. Os indicadores usam a etapa atual de cada cadastro; o Imobmeet não fornece o histórico de passagem pelas etapas.</footer>
   </main>
 </div>
 
@@ -584,7 +587,9 @@ function lead(){
   const parados=ab.filter(r=>r.parado>=15).length, ciclo=median(v.map(r=>r.ciclo));
   $('lead').innerHTML=n?`<b>${nf(n)}</b> cadastros ${n===DATA.length?'no funil':'no recorte'}. <b>${nf(v.length)}</b> viraram contrato (${pc(v.length,n)}), somando <b>${brlc(vv)}</b>.`
     :'Nenhum cadastro corresponde a este recorte. Remova um filtro à esquerda para ver o espelho de novo.';
-  $('facts').innerHTML=[
+  const vt=sum(R,r=>r.vn), cv=R.filter(r=>r.vn).length;
+  $('facts').innerHTML=`<div class="wide"><dt>Valor de negócio total${n===DATA.length?'':' do recorte'}</dt><dd>${vt.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</dd>`+
+    `<small>soma de todas as fichas; ${nf(cv)} de ${nf(n)} cadastros têm valor informado, média de ${cv?brl(vt/cv):'R$ 0'}</small></div>`+[
     ['Em aberto',nf(ab.length)],['Parados 15 dias ou mais',`<span class="${parados?'bad':''}">${nf(parados)}</span>`],
     ['Valor em aberto',brlc(sum(ab,r=>r.vn))],['Ticket médio dos contratos',v.length?brlc(vv/v.length):'–'],
     ['Perdidos',pc(R.filter(r=>r.perd).length,n)],['Ciclo até o contrato',ciclo==null?'–':nf(Math.round(ciclo))+' dias (mediana)']
