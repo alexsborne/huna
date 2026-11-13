@@ -2463,61 +2463,110 @@ setTimeout(sizeHeader,300);
 
 </script>
 <!--ABA_VENDAS--><script>/* Aba "Vendas Realizadas" — componente independente, injetado por src/inject_aba_vendas.py.
-   Venda = cadastro na etapa "Contrato Finalizado" do Imobmeet. */
+   Venda = cadastro na etapa "Contrato Finalizado" do Imobmeet. Filtros próprios da aba. */
 (function(){
   const EXTR='13/11/2026 09:28';
   const D=(typeof DATA!=='undefined'?DATA:(typeof RAW!=='undefined'?RAW:[]));
-  const V=D.filter(r=>r.etapa==='Contrato Finalizado');
-  const EMC=D.filter(r=>['Elaboração Contrato','Enviado para assinatura','Contrato c/pendência','Devolvido Ass. Cliente'].includes(r.etapa)).length;
+  const CONTR=['Elaboração Contrato','Enviado para assinatura','Contrato c/pendência','Devolvido Ass. Cliente'];
   const brl=n=>(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const nf=n=>(n||0).toLocaleString('pt-BR');
+  const pc=(a,b)=>b?(100*a/b).toFixed(1).replace('.',',')+'%':'0%';
   const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const ym=s=>{const m=/(\d\d)\/(\d\d)\/(\d{4})/.exec(s||'');return m?m[3]+'-'+m[2]:'';};
+  const mb=k=>k?k.slice(5)+'/'+k.slice(0,4):'';
   const key=s=>{const m=/(\d\d)\/(\d\d)\/(\d{4}) ?(\d\d:\d\d)?/.exec(s||'');return m?m[3]+m[2]+m[1]+(m[4]||''):'';};
-  const tot=V.reduce((a,r)=>a+(+r.valor_negocio||0),0);
-  const mesAtual=ym(EXTR), noMes=V.filter(r=>ym(r.ultima_atualizacao)===mesAtual);
-  const grp=(f)=>{const m={};V.forEach(r=>{const k=f(r)||'(não informado)';(m[k]=m[k]||{n:0,v:0}).n++;m[k].v+=(+r.valor_negocio||0);});return Object.entries(m);};
-  const tbl=(t,rows,h)=>`<div class="vr-box"><h3>${t}</h3><table><thead><tr><th>${h}</th><th class="n">Vendas</th><th class="n">%</th><th class="n">Valor</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${nf(o.n)}</td><td class="n">${V.length?(100*o.n/V.length).toFixed(1).replace('.',','):0}%</td><td class="n">${brl(o.v)}</td></tr>`).join('')}</tbody></table></div>`;
+  const NI='(não informado)', val=r=>+r.valor_negocio||0;
+  const MV=new Map(D.map(r=>[r,ym(r.ultima_atualizacao)])), MC=new Map(D.map(r=>[r,ym(r.cadastro)]));
+  const mv=r=>MV.get(r), mc=r=>MC.get(r);
+  const mesAtual=ym(EXTR);
+  /* filtros: [campo, rótulo, getter] */
+  const F=[['produto','Empreendimento',r=>r.produto],['mv','Mês da venda',mv],['mc','Mês do cadastro',mc],
+    ['equipe','Equipe / imobiliária',r=>r.equipe],['responsavel','Corretor',r=>r.responsavel],['origem','Origem',r=>r.origem],['finalidade','Finalidade',r=>r.finalidade]];
+  const SEL={}; let Q='';
+  const opts=g=>{const s=new Set();D.forEach(r=>s.add(g(r)||NI));return [...s].sort((a,b)=>/^\d{4}-\d\d$/.test(a)?b.localeCompare(a):a.localeCompare(b,'pt-BR',{numeric:true}));};
+  const pass=(r,skip)=>F.every(([k,,g])=>k===skip||!SEL[k]||(g(r)||NI)===SEL[k]);
+  const grp=(A,f)=>{const m={};A.forEach(r=>{const k=f(r)||NI;(m[k]=m[k]||{n:0,v:0}).n++;m[k].v+=val(r);});return Object.entries(m);};
   const byN=a=>a.sort((x,y)=>y[1].n-x[1].n||y[1].v-x[1].v);
-  const meses=grp(r=>{const k=ym(r.ultima_atualizacao);return k?k.slice(5)+'/'+k.slice(0,4):'';}).sort((a,b)=>(b[0].slice(3)+b[0].slice(0,2)).localeCompare(a[0].slice(3)+a[0].slice(0,2)));
-  const lista=V.slice().sort((a,b)=>key(b.ultima_atualizacao).localeCompare(key(a.ultima_atualizacao)));
+  const tbl=(t,rows,h,N)=>`<div class="vr-box"><h3>${t}</h3><table><thead><tr><th>${h}</th><th class="n">Vendas</th><th class="n">%</th><th class="n">Valor</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr><td>${esc(h==='Mês'?mb(k):k)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,N)}</td><td class="n">${brl(o.v)}</td></tr>`).join('')||'<tr><td colspan="4">Nenhuma venda no recorte.</td></tr>'}</tbody></table></div>`;
 
   const st=document.createElement('style');
   st.textContent=`#vrPane{position:fixed;inset:0;z-index:99999;background:#f5f6f9;color:#1c2333;overflow:auto;display:none;font-family:inherit}
 #vrPane.on{display:block}#vrPane .vr-in{max-width:1280px;margin:0 auto;padding:20px 18px 60px}
 #vrPane .vr-hd{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
 #vrPane h2{margin:0;font-size:22px}#vrPane h3{margin:0 0 8px;font-size:15px}
-#vrPane .vr-note{color:#5b6476;font-size:13px;margin:0 0 16px}
-#vrPane button.vr-x{border:0;background:#1f3a68;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;cursor:pointer}
-#vrPane .vr-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+#vrPane .vr-note{color:#5b6476;font-size:13px;margin:0 0 12px}
+#vrPane button.vr-x,#vrPane button.vr-cl{border:0;background:#1f3a68;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;cursor:pointer}
+#vrPane button.vr-cl{background:#e4e8f0;color:#1f3a68}
+#vrPane .vr-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;align-items:end;background:#fff;border:1px solid #dde1ea;border-radius:12px;padding:12px;margin-bottom:14px}
+#vrPane .vr-f label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:#5b6476;text-transform:uppercase;letter-spacing:.04em}
+#vrPane select,#vrPane input{padding:7px 9px;border:1px solid #cfd5e0;border-radius:8px;font:inherit;font-size:13px;background:#fff;color:#1c2333;text-transform:none;letter-spacing:0;min-width:0}
+#vrPane select.act{border-color:#1f3a68;box-shadow:0 0 0 2px #1f3a6833}
+#vrPane .vr-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
 #vrPane .vr-k div,#vrPane .vr-box{background:#fff;border:1px solid #dde1ea;border-radius:12px;padding:14px}
-#vrPane .vr-k b{display:block;font-size:26px;color:#1f3a68}#vrPane .vr-k span{font-size:12px;color:#5b6476;text-transform:uppercase;letter-spacing:.04em}
+#vrPane .vr-k b{display:block;font-size:24px;color:#1f3a68}#vrPane .vr-k span{font-size:12px;color:#5b6476;text-transform:uppercase;letter-spacing:.04em}
 #vrPane .vr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px;margin-bottom:16px}
-#vrPane .vr-box{overflow:auto;max-height:420px}#vrPane table{width:100%;border-collapse:collapse;font-size:13px}
+#vrPane .vr-box{overflow:auto;max-height:440px}#vrPane .vr-wide{max-height:none;margin-bottom:16px}
+#vrPane table{width:100%;border-collapse:collapse;font-size:13px}
 #vrPane th,#vrPane td{padding:6px 8px;border-bottom:1px solid #eceef3;text-align:left;white-space:nowrap}
-#vrPane th{position:sticky;top:0;background:#fff!important;color:#5b6476!important;font-weight:600;font-size:12px;height:auto!important}#vrPane td{color:#1c2333!important;background:transparent}#vrPane td:first-child{white-space:normal;min-width:140px}#vrPane td.n,#vrPane th.n{text-align:right}
-#vrPane tbody tr:nth-child(even){background:#f8f9fb}#vrPane .vr-list{max-height:none}
-#vrPane input{padding:8px 10px;border:1px solid #cfd5e0;border-radius:8px;font:inherit;width:min(360px,100%);margin-bottom:8px}`;
+#vrPane th{position:sticky;top:0;background:#fff!important;color:#5b6476!important;font-weight:600;font-size:12px;height:auto!important}
+#vrPane td{color:#1c2333!important;background:transparent}#vrPane td:first-child{white-space:normal;min-width:140px}
+#vrPane td.n,#vrPane th.n{text-align:right}#vrPane tbody tr:nth-child(even){background:#f8f9fb}
+#vrPane tr.z td{color:#9aa1ae!important}#vrPane tr.pick{cursor:pointer}#vrPane tr.pick:hover td{background:#eef2fa}
+@media(max-width:600px){#vrPane .vr-g{grid-template-columns:1fr}}`;
   document.head.appendChild(st);
 
   const p=document.createElement('div'); p.id='vrPane'; p.setAttribute('role','tabpanel');
   p.innerHTML=`<div class="vr-in"><div class="vr-hd"><h2>Vendas Realizadas — até ${esc(EXTR)}</h2><button class="vr-x" type="button">✕ Voltar ao painel</button></div>
-<p class="vr-note">Venda = cadastro na etapa <b>Contrato Finalizado</b> do Imobmeet (base completa deste painel, sem filtros). O mês é o da última atualização do cadastro, usado como aproximação da data da venda.</p>
-<div class="vr-k"><div><span>Vendas realizadas</span><b>${nf(V.length)}</b></div><div><span>Valor total vendido</span><b>${brl(tot)}</b></div>
-<div><span>Ticket médio</span><b>${brl(V.length?tot/V.length:0)}</b></div><div><span>Vendas em ${esc(mesAtual.slice(5)+'/'+mesAtual.slice(0,4))}</span><b>${nf(noMes.length)}</b></div>
-<div><span>Em contrato (a finalizar)</span><b>${nf(EMC)}</b></div></div>
-<div class="vr-g">${tbl('Por produto',byN(grp(r=>r.produto)),'Produto')}${tbl('Por mês',meses,'Mês')}${tbl('Por equipe / imobiliária',byN(grp(r=>r.equipe)),'Equipe')}${tbl('Por corretor',byN(grp(r=>r.responsavel)),'Corretor')}</div>
-<div class="vr-box vr-list"><h3>Lista das vendas (${nf(V.length)})</h3><input type="search" placeholder="Buscar cliente, produto, corretor, equipe…" aria-label="Buscar venda">
-<table><thead><tr><th>Nº</th><th>Cliente</th><th>Produto</th><th>Corretor</th><th>Equipe</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody></tbody></table></div></div>`;
-  const tb=p.querySelector('.vr-list tbody');
-  const draw=q=>{q=(q||'').toLowerCase();tb.innerHTML=lista.filter(r=>!q||[r.nome,r.produto,r.responsavel,r.equipe,r.numero].join(' ').toLowerCase().includes(q)).map(r=>`<tr><td>${esc(r.numero)}</td><td>${esc(r.nome)}</td><td>${esc(r.produto)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.equipe)}</td><td class="n">${brl(+r.valor_negocio)}</td><td>${esc(r.cadastro)}</td><td>${esc(r.ultima_atualizacao)}</td></tr>`).join('');};
-  draw(''); p.querySelector('input').oninput=e=>draw(e.target.value);
+<p class="vr-note">Venda = cadastro na etapa <b>Contrato Finalizado</b> do Imobmeet. "Mês da venda" = mês da última atualização do cadastro (aproximação da data da venda). Os filtros abaixo valem só para esta aba.</p>
+<div class="vr-f">${F.map(([k,l])=>`<label>${l}<select data-f="${k}"></select></label>`).join('')}<label>Busca<input type="search" placeholder="Cliente, nº, corretor…"></label><button class="vr-cl" type="button">Limpar filtros</button></div>
+<div class="vr-k"></div>
+<div class="vr-box vr-wide vr-emp"></div>
+<div class="vr-g"></div>
+<div class="vr-box vr-wide vr-list"></div></div>`;
   document.body.appendChild(p);
+  const $=s=>p.querySelector(s);
+
+  function fillSel(){
+    p.querySelectorAll('select[data-f]').forEach(s=>{
+      const k=s.dataset.f, g=F.find(x=>x[0]===k)[2];
+      const c={}; D.forEach(r=>{if(r.etapa==='Contrato Finalizado'&&pass(r,k)){const v=g(r)||NI;c[v]=(c[v]||0)+1;}});
+      s.innerHTML='<option value="">Todos</option>'+opts(g).map(v=>`<option value="${esc(v)}"${SEL[k]===v?' selected':''}>${esc(/^\d{4}-\d\d$/.test(v)?mb(v):v)} (${c[v]||0})</option>`).join('');
+      s.classList.toggle('act',!!SEL[k]);
+    });
+  }
+  function render(){
+    fillSel();
+    const q=Q.toLowerCase();
+    const R=D.filter(r=>pass(r)&&(!q||[r.nome,r.numero,r.produto,r.responsavel,r.equipe].join(' ').toLowerCase().includes(q)));
+    const V=R.filter(r=>r.etapa==='Contrato Finalizado'), tot=V.reduce((a,r)=>a+val(r),0);
+    const emc=R.filter(r=>CONTR.includes(r.etapa)).length, noMes=V.filter(r=>mv(r)===mesAtual).length;
+    $('.vr-k').innerHTML=[['Vendas realizadas',nf(V.length)],['Valor total vendido',brl(tot)],['Ticket médio',brl(V.length?tot/V.length:0)],
+      ['Vendas em '+mb(mesAtual),nf(noMes)],['Em contrato (a finalizar)',nf(emc)],['Conversão (vendas / cadastros)',pc(V.length,R.length)]]
+      .map(([l,v])=>`<div><span>${l}</span><b>${v}</b></div>`).join('');
+    /* todos os empreendimentos do painel, mesmo sem venda (ignora o filtro de empreendimento para listar todos) */
+    const RE=D.filter(r=>pass(r,'produto')&&(!q||[r.nome,r.numero,r.produto,r.responsavel,r.equipe].join(' ').toLowerCase().includes(q)));
+    const E={}; opts(r=>r.produto).forEach(k=>E[k]={c:0,n:0,v:0,k:0});
+    RE.forEach(r=>{const o=E[r.produto||NI]; o.c++; if(r.etapa==='Contrato Finalizado'){o.n++;o.v+=val(r);} else if(CONTR.includes(r.etapa)) o.k++;});
+    const EV=Object.values(E).reduce((a,o)=>a+o.n,0);
+    $('.vr-emp').innerHTML=`<h3>Todos os empreendimentos (${Object.keys(E).length}) — clique para filtrar</h3><table><thead><tr><th>Empreendimento</th><th class="n">Cadastros</th><th class="n">Vendas</th><th class="n">% das vendas</th><th class="n">Conversão</th><th class="n">Em contrato</th><th class="n">Valor vendido</th><th class="n">Ticket médio</th></tr></thead><tbody>`+
+      Object.entries(E).sort((a,b)=>b[1].n-a[1].n||b[1].c-a[1].c).map(([k,o])=>`<tr class="pick${o.n?'':' z'}" data-p="${esc(k)}"${SEL.produto===k?' style="outline:2px solid #1f3a68"':''}><td>${esc(k)}</td><td class="n">${nf(o.c)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,EV)}</td><td class="n">${pc(o.n,o.c)}</td><td class="n">${nf(o.k)}</td><td class="n">${brl(o.v)}</td><td class="n">${brl(o.n?o.v/o.n:0)}</td></tr>`).join('')+'</tbody></table>';
+    $('.vr-emp').querySelectorAll('tr.pick').forEach(tr=>tr.onclick=()=>{const k=tr.dataset.p;SEL.produto=SEL.produto===k?'':k;render();});
+    const meses=grp(V,mv).sort((a,b)=>b[0].localeCompare(a[0]));
+    $('.vr-g').innerHTML=tbl('Por mês da venda',meses,'Mês',V.length)+tbl('Por equipe / imobiliária',byN(grp(V,r=>r.equipe)),'Equipe',V.length)+
+      tbl('Por corretor',byN(grp(V,r=>r.responsavel)),'Corretor',V.length)+tbl('Por origem',byN(grp(V,r=>r.origem)),'Origem',V.length);
+    const L=V.slice().sort((a,b)=>key(b.ultima_atualizacao).localeCompare(key(a.ultima_atualizacao)));
+    $('.vr-list').innerHTML=`<h3>Lista das vendas (${nf(L.length)})</h3><table><thead><tr><th>Nº</th><th>Cliente</th><th>Empreendimento</th><th>Corretor</th><th>Equipe</th><th>Origem</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody>`+
+      (L.map(r=>`<tr><td>${esc(r.numero)}</td><td>${esc(r.nome)}</td><td>${esc(r.produto)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.equipe)}</td><td>${esc(r.origem)}</td><td class="n">${brl(val(r))}</td><td>${esc(r.cadastro)}</td><td>${esc(r.ultima_atualizacao)}</td></tr>`).join('')||'<tr><td colspan="9">Nenhuma venda no recorte.</td></tr>')+'</tbody></table>';
+  }
+  p.querySelector('.vr-f').addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.f;if(k){SEL[k]=e.target.value;render();}});
+  $('.vr-f input').oninput=e=>{Q=e.target.value;render();};
+  $('.vr-cl').onclick=()=>{F.forEach(([k])=>SEL[k]='');Q='';$('.vr-f input').value='';render();};
+  render();
 
   let btn=null;
   const close=()=>{p.classList.remove('on');document.documentElement.style.overflow='';if(btn)btn.setAttribute('aria-selected','false');};
   const open=()=>{p.classList.add('on');p.scrollTop=0;document.documentElement.style.overflow='hidden';if(btn)btn.setAttribute('aria-selected','true');};
-  p.querySelector('.vr-x').onclick=close;
+  $('.vr-x').onclick=close;
   document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
   const nav=document.getElementById('tabsIn')||document.getElementById('tabs')||document.querySelector('nav');
   if(!nav) return;
