@@ -2509,8 +2509,8 @@ setTimeout(sizeHeader,300);
 #vrPane .vr-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
 #vrPane .vr-k div,#vrPane .vr-box{background:#fff;border:1px solid #dde1ea;border-radius:12px;padding:14px}
 #vrPane .vr-k b{display:block;font-size:24px;color:#1f3a68}#vrPane .vr-k span{font-size:12px;color:#5b6476;text-transform:uppercase;letter-spacing:.04em}
-#vrPane .vr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px;margin-bottom:16px}
-#vrPane .vr-box{overflow:auto;max-height:440px}#vrPane .vr-wide{max-height:none;margin-bottom:16px}
+#vrPane .vr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(560px,1fr));gap:12px;margin-bottom:16px}
+#vrPane .vr-box{overflow:visible}#vrPane .vr-tw{max-height:360px;overflow:auto}#vrPane .vr-list .vr-tw{max-height:none}#vrPane .vr-ch{margin:0 0 12px}#vrPane .vr-svg{width:100%;height:auto;display:block;font-size:11px}#vrPane .vr-svg text{fill:#1c2333}#vrPane .vr-svg .vr-tl{fill:#5b6476}#vrPane .vr-hit{cursor:pointer}#vrPane .vr-hit:hover rect:first-of-type{fill:#f1f4f9}#vrPane .vr-lg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#5b6476;margin:0 0 6px}#vrPane .vr-lg i{display:inline-block;width:12px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle}#vrPane .vr-in2{font-size:12.5px;color:#3a4356;margin:8px 0 0;line-height:1.45;background:#f6f8fc;border-left:3px solid #1f3a68;padding:7px 10px;border-radius:0 6px 6px 0}#vrPane .vr-wide{max-height:none;margin-bottom:16px}
 #vrPane table{width:100%;border-collapse:collapse;font-size:13px}
 #vrPane th,#vrPane td{padding:6px 8px;border-bottom:1px solid #eceef3;text-align:left;white-space:nowrap}
 #vrPane th{position:sticky;top:0;background:#fff!important;color:#5b6476!important;font-weight:600;font-size:12px;height:auto!important}
@@ -2539,6 +2539,68 @@ setTimeout(sizeHeader,300);
       s.classList.toggle('act',!!SEL[k]);
     });
   }
+  /* ===== gráficos (SVG, sem bibliotecas) — um por tabela; clique numa barra filtra a aba (13/11/2026) ===== */
+  const C1='#1f3a68',C2='#e0a030',C3='#e4572e',CG='#9aa1ae';
+  const kfmt=v=>v>=1e6?'R$ '+(v/1e6).toFixed(1).replace('.',',')+' mi':v>=1e3?'R$ '+Math.round(v/1e3)+' mil':brl(v);
+  const cut=(s,n)=>{s=String(s);return s.length>n?s.slice(0,n-1)+'…':s;};
+  /* barras horizontais: it=[{k,lab,a,b,txt,fk,fv,tip}] (a = principal, b = empilhado opcional) */
+  const wOf=b=>Math.max(340,((b&&b.clientWidth)||790)-30);
+  function hbars(it,o){o=o||{};const W=o.W||760,LW=Math.min(o.lw||230,W*.32),RW=Math.min(o.rw||170,W*.36),RH=22,H=it.length*RH+8,mx=Math.max(1,...it.map(x=>x.a+(x.b||0)));
+    const sc=v=>v/mx*(W-LW-RW);
+    return `<svg viewBox="0 0 ${W} ${H}" class="vr-svg" role="img">`+it.map((x,i)=>{const y=i*RH+4,wa=sc(x.a),wb=sc(x.b||0),on=x.fk&&SEL[x.fk]===x.fv;
+      return `<g class="${x.fk?'vr-hit':''}" ${x.fk?`data-fk="${x.fk}" data-fv="${esc(x.fv)}"`:''}><title>${esc(x.tip||x.lab)}</title>
+<rect x="0" y="${y}" width="${W}" height="${RH-2}" fill="${on?'#eef2fa':'transparent'}"/>
+<text x="${LW-8}" y="${y+14}" text-anchor="end" class="vr-tl">${esc(cut(x.lab,Math.max(12,Math.floor(LW/6.6))))}</text>
+<rect x="${LW}" y="${y+3}" width="${Math.max(wa,x.a?2:0)}" height="${RH-8}" rx="2" fill="${x.c||C1}"/>
+${x.b?`<rect x="${LW+wa}" y="${y+3}" width="${wb}" height="${RH-8}" rx="2" fill="${C2}"/>`:''}
+<text x="${LW+wa+wb+6}" y="${y+14}" class="vr-tv">${esc(x.txt)}</text></g>`;}).join('')+'</svg>';}
+  const legend=a=>'<div class="vr-lg">'+a.map(([c,t,l])=>`<span><i style="background:${c}${l?';height:3px':''}"></i>${t}</span>`).join('')+'</div>';
+  const note=t=>`<p class="vr-in2">${t}</p>`;
+  function chartBox(box,html){if(!box)return;const t=box.querySelector('table');if(!t)return;
+    if(!t.parentElement.classList.contains('vr-tw')){const w=document.createElement('div');w.className='vr-tw';t.before(w);w.appendChild(t);}
+    const old=box.querySelector('.vr-ch');if(old)old.remove();const d=document.createElement('div');d.className='vr-ch';d.innerHTML=html;box.querySelector('.vr-tw').before(d);}
+  const share=(arr,n,N)=>N?arr.slice(0,n).reduce((a,x)=>a+x[1].n,0)/N:0;
+  function pareto(rows,N,fk,nm,W){const top=rows.slice(0,12);let acc=0;
+    const it=top.map(([k,o])=>{acc+=o.n;return {k,lab:k,a:o.n,txt:`${nf(o.n)} · ${kfmt(o.v)} · acum. ${pc(acc,N)}`,fk,fv:k,tip:`${k}\n${nf(o.n)} vendas · ${brl(o.v)} · ticket ${brl(o.v/o.n)}`};});
+    const g=rows.length,t3=share(rows,3,N),t10=share(rows,10,N),half=(()=>{let a=0,i=0;while(i<rows.length&&a<N/2){a+=rows[i][1].n;i++;}return i;})();
+    return hbars(it,{rw:220,W})+note(`<b>Concentração:</b> ${nf(g)} ${nm} com venda; os 3 primeiros fazem ${pc(t3*N,N)} e os 10 primeiros ${pc(t10*N,N)} das vendas. Metade das vendas vem de ${nf(half)} ${nm}.`+(g>12?` Mostrando os 12 maiores.`:''));}
+  function charts(V,R,E,EV){
+    const N=V.length,tot=V.reduce((a,r)=>a+val(r),0);
+    /* empreendimentos: vendidas + em contrato (pipeline) e conversão */
+    const ee=Object.entries(E).filter(([,o])=>o.n||o.k).sort((a,b)=>(b[1].n+b[1].k)-(a[1].n+a[1].k));
+    const lead=ee.slice().sort((a,b)=>b[1].n-a[1].n)[0], pipe=ee.slice().sort((a,b)=>b[1].k-a[1].k)[0];
+    const bestC=Object.entries(E).filter(([,o])=>o.c>=30&&o.n).sort((a,b)=>b[1].n/b[1].c-a[1].n/a[1].c)[0];
+    chartBox($('.vr-emp'),legend([[C1,'Vendidas (Contrato Finalizado)'],[C2,'Em contrato (a finalizar)']])+
+      hbars(ee.map(([k,o])=>({k,lab:k,a:o.n,b:o.k,txt:`${nf(o.n)} + ${nf(o.k)} · conv. ${pc(o.n,o.c)}`,fk:'produto',fv:k,tip:`${k}\n${nf(o.c)} cadastros · ${nf(o.n)} vendas (${brl(o.v)}) · ${nf(o.k)} em contrato · conversão ${pc(o.n,o.c)}`})),{rw:200,W:wOf($('.vr-emp'))})+
+      note(ee.length?`<b>Estratégico:</b> ${esc(lead[0])} lidera com ${pc(lead[1].n,EV)} das vendas.`+(bestC?` Melhor conversão (≥30 cadastros): ${esc(bestC[0])}, ${pc(bestC[1].n,bestC[1].c)}.`:'')+
+        ` <b>Tático:</b> ${nf(ee.reduce((a,x)=>a+x[1].k,0))} contratos em andamento; maior fila em ${esc(pipe[0])} (${nf(pipe[1].k)}) — prioridade para virar venda.`:'Sem vendas nem contratos no recorte.'));
+    /* mês: colunas (vendas) + linha (valor), ordem cronológica */
+    const bx=$('.vr-g').querySelectorAll('.vr-box');
+    const ms=grp(V,mv).sort((a,b)=>a[0].localeCompare(b[0]));
+    if(ms.length){const W=wOf(bx[0]),H=270,L=12,Rr=12,T=34,B=36,TK=58,cw=(W-L-Rr)/ms.length,mn=Math.max(...ms.map(x=>x[1].n));
+      /* faixa superior (TK px): linha do ticket médio; abaixo: colunas de quantidade com rótulo "n · valor" */
+      const tk=ms.map(([,o])=>o.v/o.n),t0=Math.min(...tk),t1=Math.max(...tk),yT=v=>8+(TK-22)*(t1===t0?.5:1-(v-t0)/(t1-t0));
+      const yN=v=>T+TK+(H-T-TK-B)*(1-v/mn);
+      let s=`<svg viewBox="0 0 ${W} ${H}" class="vr-svg" role="img"><line x1="${L}" y1="${H-B}" x2="${W-Rr}" y2="${H-B}" stroke="#cfd5e0"/><line x1="${L}" y1="${TK+4}" x2="${W-Rr}" y2="${TK+4}" stroke="#eceef3" stroke-dasharray="3 3"/>`;
+      ms.forEach(([k,o],i)=>{const x=L+i*cw,on=SEL.mv===k;s+=`<g class="vr-hit" data-fk="mv" data-fv="${k}"><title>${mb(k)}: ${nf(o.n)} vendas · ${brl(o.v)} · ticket ${brl(o.v/o.n)}</title><rect x="${x}" y="0" width="${cw}" height="${H-B}" fill="${on?'#eef2fa':'transparent'}"/><rect x="${x+cw*.2}" y="${yN(o.n)}" width="${cw*.6}" height="${H-B-yN(o.n)}" rx="2" fill="${C1}"/><text x="${x+cw/2}" y="${yN(o.n)-17}" text-anchor="middle" class="vr-tv" style="font-weight:600">${nf(o.n)}</text><text x="${x+cw/2}" y="${yN(o.n)-4}" text-anchor="middle" class="vr-tl">${kfmt(o.v)}</text><text x="${x+cw/2}" y="${H-B+15}" text-anchor="middle" class="vr-tl">${mb(k)}</text></g>`;});
+      s+=`<polyline fill="none" stroke="${C3}" stroke-width="2" points="${ms.map((_,i)=>`${L+i*cw+cw/2},${yT(tk[i])}`).join(' ')}"/>`+ms.map((_,i)=>`<circle cx="${L+i*cw+cw/2}" cy="${yT(tk[i])}" r="3.5" fill="${C3}"/><text x="${L+i*cw+cw/2}" y="${yT(tk[i])+14}" text-anchor="middle" style="fill:${C3};font-size:10.5px">${kfmt(tk[i])}</text>`).join('')+'</svg>';
+      const last=ms[ms.length-1],prev=ms[ms.length-2],best=ms.slice().sort((a,b)=>b[1].n-a[1].n)[0],l3=ms.slice(-4,-1),avg3=l3.length?l3.reduce((a,x)=>a+x[1].n,0)/l3.length:0;
+      const tkU=tk[tk.length-1],tkM=tot/N;
+      chartBox(bx[0],legend([[C1,'Vendas (qtd.) e valor vendido'],[C3,'Ticket médio do mês',1]])+s+note(`<b>Estratégico:</b> pico em ${mb(best[0])} (${nf(best[1].n)} vendas, ${pc(best[1].n,N)} do total); ticket médio de ${mb(last[0])} ${brl(tkU)}, ${tkU>=tkM?'acima':'abaixo'} da média geral (${brl(tkM)})${l3.length?`; média dos 3 meses anteriores ao atual: ${avg3.toFixed(1).replace('.',',')} vendas/mês`:''}. <b>Tático:</b> ${mb(last[0])} soma ${nf(last[1].n)} venda(s)`+(prev?` vs. ${nf(prev[1].n)} em ${mb(prev[0])}`:'')+(last[0]===mesAtual?' (mês em andamento)':'')+'. Mês = última atualização do cadastro (aproximação).'));}
+    else chartBox(bx[0],note('Sem vendas no recorte.'));
+    chartBox(bx[1],N?pareto(byN(grp(V,r=>r.equipe)),N,'equipe','equipes',wOf(bx[1])):note('Sem vendas no recorte.'));
+    chartBox(bx[2],N?pareto(byN(grp(V,r=>r.responsavel)),N,'responsavel','corretores',wOf(bx[2])):note('Sem vendas no recorte.'));
+    /* origem: quantidade e ticket médio */
+    const og=byN(grp(V,r=>r.origem));
+    chartBox(bx[3],N?hbars(og.map(([k,o])=>({k,lab:k,a:o.n,txt:`${nf(o.n)} (${pc(o.n,N)}) · ticket ${kfmt(o.v/o.n)}`,fk:'origem',fv:k,tip:`${k}\n${nf(o.n)} vendas · ${brl(o.v)} · ticket ${brl(o.v/o.n)}`})),{rw:220,W:wOf(bx[3])})+
+      note(`<b>Estratégico:</b> ${esc(og[0][0])} é o principal canal (${pc(og[0][1].n,N)} das vendas). <b>Tático:</b> maior ticket médio em ${esc(og.filter(x=>x[1].n>=3).sort((a,b)=>b[1].v/b[1].n-a[1].v/a[1].n)[0]?.[0]||og[0][0])} (canais com ≥3 vendas) — onde vale reforçar investimento.`):note('Sem vendas no recorte.'));
+    /* lista: distribuição por faixa de valor */
+    const FX=[[0,1,'Sem valor'],[1,2e5,'Até 200 mil'],[2e5,3e5,'200–300 mil'],[3e5,4e5,'300–400 mil'],[4e5,5e5,'400–500 mil'],[5e5,75e4,'500–750 mil'],[75e4,1e6,'750 mil–1 mi'],[1e6,1/0,'Acima de 1 mi']];
+    const fx=FX.map(([a,b,l])=>{const A=V.filter(r=>val(r)>=a&&val(r)<b);return {k:l,lab:l,a:A.length,txt:`${nf(A.length)} (${pc(A.length,N)}) · ${kfmt(A.reduce((s,r)=>s+val(r),0))}`,c:a===0?CG:C1};}).filter(x=>x.a||x.k!=='Sem valor');
+    const vs=V.map(val).filter(v=>v>0).sort((a,b)=>a-b),med=vs.length?(vs.length%2?vs[(vs.length-1)/2]:(vs[vs.length/2-1]+vs[vs.length/2])/2):0,modal=fx.slice().sort((a,b)=>b.a-a.a)[0];
+    chartBox($('.vr-list'),N?hbars(fx,{lw:130,rw:200,W:wOf($('.vr-list'))})+note(`<b>Faixa de valor das vendas.</b> Mediana ${brl(med)}, ticket médio ${brl(N?tot/N:0)}; faixa mais vendida: ${modal.k} (${pc(modal.a,N)}). Use para calibrar tabela de preços e o perfil de cliente a priorizar.`):note('Sem vendas no recorte.'));
+  }
+  p.addEventListener('click',e=>{const g=e.target.closest('.vr-hit');if(!g)return;const k=g.dataset.fk,v=g.dataset.fv;SEL[k]=SEL[k]===v?'':v;render();});
   function render(){
     fillSel();
     const q=Q.toLowerCase();
@@ -2562,6 +2624,7 @@ setTimeout(sizeHeader,300);
     const L=V.slice().sort((a,b)=>key(b.ultima_atualizacao).localeCompare(key(a.ultima_atualizacao)));
     $('.vr-list').innerHTML=`<h3>Lista das vendas (${nf(L.length)})${exBtns}</h3><table><thead><tr><th>Nº</th><th>Cliente</th><th>Empreendimento</th><th>Corretor</th><th>Equipe</th><th>Origem</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody>`+
       (L.map(r=>`<tr><td>${esc(r.numero)}</td><td>${esc(r.nome)}</td><td>${esc(r.produto)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.equipe)}</td><td>${esc(r.origem)}</td><td class="n">${brl(val(r))}</td><td>${esc(r.cadastro)}</td><td>${esc(r.ultima_atualizacao)}</td></tr>`).join('')||'<tr><td colspan="9">Nenhuma venda no recorte.</td></tr>')+'</tbody></table>';
+    charts(V,R,E,EV);
   }
   p.querySelector('.vr-f').addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.f;if(k){SEL[k]=e.target.value;render();}});
   $('.vr-f input').oninput=e=>{Q=e.target.value;render();};
@@ -2651,8 +2714,9 @@ setTimeout(sizeHeader,300);
 
   let btn=null;
   const close=()=>{p.classList.remove('on');document.documentElement.style.overflow='';if(btn)btn.setAttribute('aria-selected','false');};
-  const open=()=>{p.classList.add('on');p.scrollTop=0;document.documentElement.style.overflow='hidden';if(btn)btn.setAttribute('aria-selected','true');};
+  const open=()=>{p.classList.add('on');p.scrollTop=0;render();document.documentElement.style.overflow='hidden';if(btn)btn.setAttribute('aria-selected','true');};
   $('.vr-x').onclick=close;
+  let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(p.classList.contains('on'))render();},200);});
   document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
   const nav=document.getElementById('tabsIn')||document.getElementById('tabs')||document.querySelector('nav');
   if(!nav) return;
