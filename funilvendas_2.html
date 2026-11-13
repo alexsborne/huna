@@ -2479,17 +2479,19 @@ setTimeout(sizeHeader,300);
   const MV=new Map(D.map(r=>[r,ym(r.ultima_atualizacao)])), MC=new Map(D.map(r=>[r,ym(r.cadastro)]));
   const mv=r=>MV.get(r), mc=r=>MC.get(r);
   const mesAtual=ym(EXTR);
+  const FX=[[0,1,'Sem valor'],[1,2e5,'Até 200 mil'],[2e5,3e5,'200–300 mil'],[3e5,4e5,'300–400 mil'],[4e5,5e5,'400–500 mil'],[5e5,75e4,'500–750 mil'],[75e4,1e6,'750 mil–1 mi'],[1e6,1/0,'Acima de 1 mi']], FXL=FX.map(x=>x[2]);
+  const fxOf=r=>{const v=val(r),f=FX.find(([a,b])=>v>=a&&v<b);return f?f[2]:'Sem valor';};
   /* filtros: [campo, rótulo, getter] */
   const F=[['produto','Empreendimento',r=>r.produto],['mv','Mês da venda',mv],['mc','Mês do cadastro',mc],
-    ['equipe','Equipe / imobiliária',r=>r.equipe],['responsavel','Corretor',r=>r.responsavel],['origem','Origem',r=>r.origem],['finalidade','Finalidade',r=>r.finalidade]];
-  const SEL={}; let Q='';
-  const opts=g=>{const s=new Set();D.forEach(r=>s.add(g(r)||NI));return [...s].sort((a,b)=>/^\d{4}-\d\d$/.test(a)?b.localeCompare(a):a.localeCompare(b,'pt-BR',{numeric:true}));};
+    ['equipe','Equipe / imobiliária',r=>r.equipe],['responsavel','Corretor',r=>r.responsavel],['origem','Origem',r=>r.origem],['finalidade','Finalidade',r=>r.finalidade],['faixa','Faixa de valor',fxOf]];
+  const SEL={}; let Q='', LM='vendas'; const SORT={}, HIDE=new Set();
+  const opts=g=>{const s=new Set();D.forEach(r=>s.add(g(r)||NI));return [...s].sort((a,b)=>FXL.includes(a)&&FXL.includes(b)?FXL.indexOf(a)-FXL.indexOf(b):/^\d{4}-\d\d$/.test(a)?b.localeCompare(a):a.localeCompare(b,'pt-BR',{numeric:true}));};
   const pass=(r,skip)=>F.every(([k,,g])=>k===skip||!SEL[k]||(g(r)||NI)===SEL[k]);
   const grp=(A,f)=>{const m={};A.forEach(r=>{const k=f(r)||NI;(m[k]=m[k]||{n:0,v:0}).n++;m[k].v+=val(r);});return Object.entries(m);};
   /* ===== exportação Excel (.xlsx) e PDF, sem bibliotecas (13/11/2026) ===== */
   const exBtns='<span class="vr-ex"><button type="button" class="vr-xb" data-x="xlsx" title="Baixar em Excel">Excel</button><button type="button" class="vr-xb" data-x="pdf" title="Baixar em PDF">PDF</button></span>';
   const byN=a=>a.sort((x,y)=>y[1].n-x[1].n||y[1].v-x[1].v);
-  const tbl=(t,rows,h,N)=>`<div class="vr-box"><h3>${t}${exBtns}</h3><table><thead><tr><th>${h}</th><th class="n">Vendas</th><th class="n">%</th><th class="n">Valor</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr><td>${esc(h==='Mês'?mb(k):k)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,N)}</td><td class="n">${brl(o.v)}</td></tr>`).join('')||'<tr><td colspan="4">Nenhuma venda no recorte.</td></tr>'}</tbody></table></div>`;
+  const tbl=(t,rows,h,N,fk)=>`<div class="vr-box" data-id="${fk}"><h3>${t}${exBtns}</h3><table><thead><tr><th>${h}</th><th class="n">Vendas</th><th class="n">%</th><th class="n">Valor</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr class="pick${SEL[fk]===k?' sel':''}" data-fk="${fk}" data-fv="${esc(k)}" title="Clique para filtrar a aba por ${esc(h==='Mês'?mb(k):k)}"><td>${esc(h==='Mês'?mb(k):k)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,N)}</td><td class="n">${brl(o.v)}</td></tr>`).join('')||'<tr><td colspan="4">Nenhuma venda no recorte.</td></tr>'}</tbody></table></div>`;
 
   const st=document.createElement('style');
   st.textContent=`#vrPane{position:fixed;inset:0;z-index:99999;background:#f5f6f9;color:#1c2333;overflow:auto;display:none;font-family:inherit}
@@ -2516,7 +2518,7 @@ setTimeout(sizeHeader,300);
 #vrPane th{position:sticky;top:0;background:#fff!important;color:#5b6476!important;font-weight:600;font-size:12px;height:auto!important}
 #vrPane td{color:#1c2333!important;background:transparent}#vrPane td:first-child{white-space:normal;min-width:140px}
 #vrPane td.n,#vrPane th.n{text-align:right}#vrPane tbody tr:nth-child(even){background:#f8f9fb}
-#vrPane tr.z td{color:#9aa1ae!important}#vrPane tr.pick{cursor:pointer}#vrPane tr.pick:hover td{background:#eef2fa}
+#vrPane tr.z td{color:#9aa1ae!important}#vrPane tr.sel td{background:#e3eaf7!important;font-weight:600}#vrPane .vr-hide{display:none}#vrPane .vr-k div[data-act]{cursor:pointer;transition:border-color .15s,box-shadow .15s}#vrPane .vr-k div[data-act]:hover{border-color:#1f3a68;box-shadow:0 2px 8px #1f3a6822}#vrPane .vr-k div.on{border-color:#1f3a68;background:#eef2fa}#vrPane th{cursor:pointer;user-select:none}#vrPane th.asc:after{content:' ▲';font-size:9px}#vrPane th.desc:after{content:' ▼';font-size:9px}#vrPane .vr-lg [data-lg]{cursor:pointer;padding:2px 6px;border-radius:6px}#vrPane .vr-lg [data-lg]:hover{background:#eef2fa}#vrPane .vr-lg .off{opacity:.45;text-decoration:line-through}#vrPane .vr-fi{position:fixed;inset:0;background:#0b152a66;display:flex;align-items:center;justify-content:center;z-index:2;padding:16px}#vrPane .vr-fi>div{background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:90vh;overflow:auto;padding:20px;box-shadow:0 10px 40px #0004}#vrPane .vr-fi dl{display:grid;grid-template-columns:170px 1fr;gap:6px 12px;font-size:13.5px;margin:12px 0}#vrPane .vr-fi dt{color:#5b6476}#vrPane .vr-fi dd{margin:0}#vrPane .vr-fi .vr-fb{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}#vrPane tr.pick{cursor:pointer}#vrPane tr.pick:hover td{background:#eef2fa}
 @media(max-width:600px){#vrPane .vr-g{grid-template-columns:1fr}}`;
   document.head.appendChild(st);
 
@@ -2554,7 +2556,7 @@ setTimeout(sizeHeader,300);
 <rect x="${LW}" y="${y+3}" width="${Math.max(wa,x.a?2:0)}" height="${RH-8}" rx="2" fill="${x.c||C1}"/>
 ${x.b?`<rect x="${LW+wa}" y="${y+3}" width="${wb}" height="${RH-8}" rx="2" fill="${C2}"/>`:''}
 <text x="${LW+wa+wb+6}" y="${y+14}" class="vr-tv">${esc(x.txt)}</text></g>`;}).join('')+'</svg>';}
-  const legend=a=>'<div class="vr-lg">'+a.map(([c,t,l])=>`<span><i style="background:${c}${l?';height:3px':''}"></i>${t}</span>`).join('')+'</div>';
+  const legend=a=>'<div class="vr-lg">'+a.map(([c,t,l,act,tip])=>`<span${act?` data-lg="${act}" role="button" tabindex="0" title="${tip||''}" class="${HIDE.has(act)||(act==='contr'&&LM==='contr')?'off':''}"`:''}><i style="background:${c}${l?';height:3px':''}"></i>${t}</span>`).join('')+'</div>';
   const note=t=>`<p class="vr-in2">${t}</p>`;
   function chartBox(box,html){if(!box)return;const t=box.querySelector('table');if(!t)return;
     if(!t.parentElement.classList.contains('vr-tw')){const w=document.createElement('div');w.className='vr-tw';t.before(w);w.appendChild(t);}
@@ -2570,7 +2572,7 @@ ${x.b?`<rect x="${LW+wa}" y="${y+3}" width="${wb}" height="${RH-8}" rx="2" fill=
     const ee=Object.entries(E).filter(([,o])=>o.n||o.k).sort((a,b)=>(b[1].n+b[1].k)-(a[1].n+a[1].k));
     const lead=ee.slice().sort((a,b)=>b[1].n-a[1].n)[0], pipe=ee.slice().sort((a,b)=>b[1].k-a[1].k)[0];
     const bestC=Object.entries(E).filter(([,o])=>o.c>=30&&o.n).sort((a,b)=>b[1].n/b[1].c-a[1].n/a[1].c)[0];
-    chartBox($('.vr-emp'),legend([[C1,'Vendidas (Contrato Finalizado)'],[C2,'Em contrato (a finalizar)']])+
+    chartBox($('.vr-emp'),legend([[C1,'Vendidas (Contrato Finalizado)',0,'vendas','Clique para ver a lista das vendas'],[C2,'Em contrato (a finalizar)',0,'contr','Clique para listar os contratos em andamento']])+
       hbars(ee.map(([k,o])=>({k,lab:k,a:o.n,b:o.k,txt:`${nf(o.n)} + ${nf(o.k)} · conv. ${pc(o.n,o.c)}`,fk:'produto',fv:k,tip:`${k}\n${nf(o.c)} cadastros · ${nf(o.n)} vendas (${brl(o.v)}) · ${nf(o.k)} em contrato · conversão ${pc(o.n,o.c)}`})),{rw:200,W:wOf($('.vr-emp'))})+
       note(ee.length?`<b>Estratégico:</b> ${esc(lead[0])} lidera com ${pc(lead[1].n,EV)} das vendas.`+(bestC?` Melhor conversão (≥30 cadastros): ${esc(bestC[0])}, ${pc(bestC[1].n,bestC[1].c)}.`:'')+
         ` <b>Tático:</b> ${nf(ee.reduce((a,x)=>a+x[1].k,0))} contratos em andamento; maior fila em ${esc(pipe[0])} (${nf(pipe[1].k)}) — prioridade para virar venda.`:'Sem vendas nem contratos no recorte.'));
@@ -2582,11 +2584,11 @@ ${x.b?`<rect x="${LW+wa}" y="${y+3}" width="${wb}" height="${RH-8}" rx="2" fill=
       const tk=ms.map(([,o])=>o.v/o.n),t0=Math.min(...tk),t1=Math.max(...tk),yT=v=>8+(TK-22)*(t1===t0?.5:1-(v-t0)/(t1-t0));
       const yN=v=>T+TK+(H-T-TK-B)*(1-v/mn);
       let s=`<svg viewBox="0 0 ${W} ${H}" class="vr-svg" role="img"><line x1="${L}" y1="${H-B}" x2="${W-Rr}" y2="${H-B}" stroke="#cfd5e0"/><line x1="${L}" y1="${TK+4}" x2="${W-Rr}" y2="${TK+4}" stroke="#eceef3" stroke-dasharray="3 3"/>`;
-      ms.forEach(([k,o],i)=>{const x=L+i*cw,on=SEL.mv===k;s+=`<g class="vr-hit" data-fk="mv" data-fv="${k}"><title>${mb(k)}: ${nf(o.n)} vendas · ${brl(o.v)} · ticket ${brl(o.v/o.n)}</title><rect x="${x}" y="0" width="${cw}" height="${H-B}" fill="${on?'#eef2fa':'transparent'}"/><rect x="${x+cw*.2}" y="${yN(o.n)}" width="${cw*.6}" height="${H-B-yN(o.n)}" rx="2" fill="${C1}"/><text x="${x+cw/2}" y="${yN(o.n)-17}" text-anchor="middle" class="vr-tv" style="font-weight:600">${nf(o.n)}</text><text x="${x+cw/2}" y="${yN(o.n)-4}" text-anchor="middle" class="vr-tl">${kfmt(o.v)}</text><text x="${x+cw/2}" y="${H-B+15}" text-anchor="middle" class="vr-tl">${mb(k)}</text></g>`;});
-      s+=`<polyline fill="none" stroke="${C3}" stroke-width="2" points="${ms.map((_,i)=>`${L+i*cw+cw/2},${yT(tk[i])}`).join(' ')}"/>`+ms.map((_,i)=>`<circle cx="${L+i*cw+cw/2}" cy="${yT(tk[i])}" r="3.5" fill="${C3}"/><text x="${L+i*cw+cw/2}" y="${yT(tk[i])+14}" text-anchor="middle" style="fill:${C3};font-size:10.5px">${kfmt(tk[i])}</text>`).join('')+'</svg>';
+      ms.forEach(([k,o],i)=>{const x=L+i*cw,on=SEL.mv===k;s+=`<g class="vr-hit${HIDE.has('sn')?' vr-hide':''}" data-fk="mv" data-fv="${k}"><title>${mb(k)}: ${nf(o.n)} vendas · ${brl(o.v)} · ticket ${brl(o.v/o.n)}</title><rect x="${x}" y="0" width="${cw}" height="${H-B}" fill="${on?'#eef2fa':'transparent'}"/><rect x="${x+cw*.2}" y="${yN(o.n)}" width="${cw*.6}" height="${H-B-yN(o.n)}" rx="2" fill="${C1}"/><text x="${x+cw/2}" y="${yN(o.n)-17}" text-anchor="middle" class="vr-tv" style="font-weight:600">${nf(o.n)}</text><text x="${x+cw/2}" y="${yN(o.n)-4}" text-anchor="middle" class="vr-tl">${kfmt(o.v)}</text><text x="${x+cw/2}" y="${H-B+15}" text-anchor="middle" class="vr-tl">${mb(k)}</text></g>`;});
+      s+=`<g class="${HIDE.has('st')?'vr-hide':''}" style="pointer-events:none"><polyline fill="none" stroke="${C3}" stroke-width="2" points="${ms.map((_,i)=>`${L+i*cw+cw/2},${yT(tk[i])}`).join(' ')}"/>`+ms.map((_,i)=>`<circle cx="${L+i*cw+cw/2}" cy="${yT(tk[i])}" r="3.5" fill="${C3}"/><text x="${L+i*cw+cw/2}" y="${yT(tk[i])+14}" text-anchor="middle" style="fill:${C3};font-size:10.5px">${kfmt(tk[i])}</text>`).join('')+'</g></svg>';
       const last=ms[ms.length-1],prev=ms[ms.length-2],best=ms.slice().sort((a,b)=>b[1].n-a[1].n)[0],l3=ms.slice(-4,-1),avg3=l3.length?l3.reduce((a,x)=>a+x[1].n,0)/l3.length:0;
       const tkU=tk[tk.length-1],tkM=tot/N;
-      chartBox(bx[0],legend([[C1,'Vendas (qtd.) e valor vendido'],[C3,'Ticket médio do mês',1]])+s+note(`<b>Estratégico:</b> pico em ${mb(best[0])} (${nf(best[1].n)} vendas, ${pc(best[1].n,N)} do total); ticket médio de ${mb(last[0])} ${brl(tkU)}, ${tkU>=tkM?'acima':'abaixo'} da média geral (${brl(tkM)})${l3.length?`; média dos 3 meses anteriores ao atual: ${avg3.toFixed(1).replace('.',',')} vendas/mês`:''}. <b>Tático:</b> ${mb(last[0])} soma ${nf(last[1].n)} venda(s)`+(prev?` vs. ${nf(prev[1].n)} em ${mb(prev[0])}`:'')+(last[0]===mesAtual?' (mês em andamento)':'')+'. Mês = última atualização do cadastro (aproximação).'));}
+      chartBox(bx[0],legend([[C1,'Vendas (qtd.) e valor vendido',0,'sn','Clique para mostrar/ocultar as colunas'],[C3,'Ticket médio do mês',1,'st','Clique para mostrar/ocultar a linha do ticket']])+s+note(`<b>Estratégico:</b> pico em ${mb(best[0])} (${nf(best[1].n)} vendas, ${pc(best[1].n,N)} do total); ticket médio de ${mb(last[0])} ${brl(tkU)}, ${tkU>=tkM?'acima':'abaixo'} da média geral (${brl(tkM)})${l3.length?`; média dos 3 meses anteriores ao atual: ${avg3.toFixed(1).replace('.',',')} vendas/mês`:''}. <b>Tático:</b> ${mb(last[0])} soma ${nf(last[1].n)} venda(s)`+(prev?` vs. ${nf(prev[1].n)} em ${mb(prev[0])}`:'')+(last[0]===mesAtual?' (mês em andamento)':'')+'. Mês = última atualização do cadastro (aproximação).'));}
     else chartBox(bx[0],note('Sem vendas no recorte.'));
     chartBox(bx[1],N?pareto(byN(grp(V,r=>r.equipe)),N,'equipe','equipes',wOf(bx[1])):note('Sem vendas no recorte.'));
     chartBox(bx[2],N?pareto(byN(grp(V,r=>r.responsavel)),N,'responsavel','corretores',wOf(bx[2])):note('Sem vendas no recorte.'));
@@ -2595,36 +2597,74 @@ ${x.b?`<rect x="${LW+wa}" y="${y+3}" width="${wb}" height="${RH-8}" rx="2" fill=
     chartBox(bx[3],N?hbars(og.map(([k,o])=>({k,lab:k,a:o.n,txt:`${nf(o.n)} (${pc(o.n,N)}) · ticket ${kfmt(o.v/o.n)}`,fk:'origem',fv:k,tip:`${k}\n${nf(o.n)} vendas · ${brl(o.v)} · ticket ${brl(o.v/o.n)}`})),{rw:220,W:wOf(bx[3])})+
       note(`<b>Estratégico:</b> ${esc(og[0][0])} é o principal canal (${pc(og[0][1].n,N)} das vendas). <b>Tático:</b> maior ticket médio em ${esc(og.filter(x=>x[1].n>=3).sort((a,b)=>b[1].v/b[1].n-a[1].v/a[1].n)[0]?.[0]||og[0][0])} (canais com ≥3 vendas) — onde vale reforçar investimento.`):note('Sem vendas no recorte.'));
     /* lista: distribuição por faixa de valor */
-    const FX=[[0,1,'Sem valor'],[1,2e5,'Até 200 mil'],[2e5,3e5,'200–300 mil'],[3e5,4e5,'300–400 mil'],[4e5,5e5,'400–500 mil'],[5e5,75e4,'500–750 mil'],[75e4,1e6,'750 mil–1 mi'],[1e6,1/0,'Acima de 1 mi']];
-    const fx=FX.map(([a,b,l])=>{const A=V.filter(r=>val(r)>=a&&val(r)<b);return {k:l,lab:l,a:A.length,txt:`${nf(A.length)} (${pc(A.length,N)}) · ${kfmt(A.reduce((s,r)=>s+val(r),0))}`,c:a===0?CG:C1};}).filter(x=>x.a||x.k!=='Sem valor');
+    const fx=FX.map(([a,b,l])=>{const A=V.filter(r=>val(r)>=a&&val(r)<b);return {k:l,lab:l,a:A.length,fk:'faixa',fv:l,tip:`${l}: ${nf(A.length)} vendas — clique para filtrar`,txt:`${nf(A.length)} (${pc(A.length,N)}) · ${kfmt(A.reduce((s,r)=>s+val(r),0))}`,c:a===0?CG:C1};}).filter(x=>x.a||x.k!=='Sem valor');
     const vs=V.map(val).filter(v=>v>0).sort((a,b)=>a-b),med=vs.length?(vs.length%2?vs[(vs.length-1)/2]:(vs[vs.length/2-1]+vs[vs.length/2])/2):0,modal=fx.slice().sort((a,b)=>b.a-a.a)[0];
     chartBox($('.vr-list'),N?hbars(fx,{lw:130,rw:200,W:wOf($('.vr-list'))})+note(`<b>Faixa de valor das vendas.</b> Mediana ${brl(med)}, ticket médio ${brl(N?tot/N:0)}; faixa mais vendida: ${modal.k} (${pc(modal.a,N)}). Use para calibrar tabela de preços e o perfil de cliente a priorizar.`):note('Sem vendas no recorte.'));
   }
-  p.addEventListener('click',e=>{const g=e.target.closest('.vr-hit');if(!g)return;const k=g.dataset.fk,v=g.dataset.fv;SEL[k]=SEL[k]===v?'':v;render();});
+  const go=sel=>{const el=$(sel);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});};
+  function sortKey(t){const c=cellVal(t);if(c)return c.v;const k=key(t);return k||String(t).toLowerCase();}
+  function applySort(){p.querySelectorAll('.vr-box[data-id]').forEach(b=>{const st=SORT[b.dataset.id],t=b.querySelector('table');if(!t)return;
+    t.querySelectorAll('th').forEach((th,i)=>{th.classList.toggle('asc',!!st&&st.i===i&&st.d>0);th.classList.toggle('desc',!!st&&st.i===i&&st.d<0);th.title='Clique para ordenar';});
+    if(!st)return;const tb=t.tBodies[0],rows=[...tb.rows].filter(r=>r.cells.length>1);
+    rows.sort((a,c)=>{const x=sortKey(a.cells[st.i].textContent.trim()),y=sortKey(c.cells[st.i].textContent.trim());return (x>y?1:x<y?-1:0)*st.d;}).forEach(r=>tb.appendChild(r));});}
+  function ficha(id){const r=D.find(x=>String(x.lead_id)===String(id));if(!r)return;
+    const f=[['Nº',r.numero],['Lead',r.lead_id],['Etapa',r.etapa],['Empreendimento',r.produto],['Corretor',r.responsavel],['Equipe / imobiliária',r.equipe],['Origem',r.origem],['Finalidade',r.finalidade],
+      ['Valor de negócio',brl(val(r))],['Renda informada',r.valor_renda?brl(+r.valor_renda):'—'],['Faixa de valor',fxOf(r)],['Cadastro',r.cadastro],['Última atualização',r.ultima_atualizacao],['Dias desde o cadastro',r.dias_cadastro],['Tags',(r.tags_list||[]).join(', ')||'—']];
+    const b=[['produto','este empreendimento',r.produto],['responsavel','este corretor',r.responsavel],['equipe','esta equipe',r.equipe],['origem','esta origem',r.origem]];
+    const d=document.createElement('div');d.className='vr-fi';
+    d.innerHTML=`<div role="dialog" aria-label="Ficha"><div class="vr-hd"><h2 style="font-size:18px">${esc(r.nome)}</h2><button type="button" class="vr-x" data-fc>✕ Fechar</button></div><dl>${f.map(([k,v])=>`<dt>${k}</dt><dd>${esc(v==null||v===''?'—':v)}</dd>`).join('')}</dl>
+<div class="vr-fb">${b.filter(x=>x[2]).map(([k,l,v])=>`<button type="button" class="vr-xb" data-ff="${k}" data-fv="${esc(v)}">Filtrar por ${l}</button>`).join('')}</div></div>`;
+    d.addEventListener('click',e=>{e.stopPropagation();const ff=e.target.closest('[data-ff]');if(ff){SEL[ff.dataset.ff]=ff.dataset.fv;d.remove();render();go('.vr-k');return;}
+      if(e.target===d||e.target.closest('[data-fc]'))d.remove();});
+    p.appendChild(d);}
+  function act(a){
+    if(a==='limpar'){if(F.some(([k])=>SEL[k])||Q||LM!=='vendas'){F.forEach(([k])=>SEL[k]='');Q='';LM='vendas';const i=$('.vr-f input');if(i)i.value='';render();}else go('.vr-list');}
+    else if(a==='valor'){LM='vendas';SORT.lista={i:6,d:-1};render();go('.vr-list');}
+    else if(a==='ticket')go('.vr-list');
+    else if(a==='mes'){SEL.mv=SEL.mv===mesAtual?'':mesAtual;render();}
+    else if(a==='contr'){LM=LM==='contr'?'vendas':'contr';delete SORT.lista;render();if(LM==='contr')go('.vr-list');}
+    else if(a==='conv'){SORT.emp={i:4,d:-1};render();go('.vr-emp');}}
+  p.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-act],[data-lg]')){e.preventDefault();e.target.click();}});
+  p.addEventListener('click',e=>{
+    if(e.target.closest('.vr-fi'))return;
+    const g=e.target.closest('.vr-hit,tr[data-fk]');if(g){const k=g.dataset.fk,v=g.dataset.fv;SEL[k]=SEL[k]===v?'':v;render();return;}
+    const tr=e.target.closest('tr[data-lead]');if(tr){ficha(tr.dataset.lead);return;}
+    const c=e.target.closest('[data-act]');if(c){act(c.dataset.act);return;}
+    const lg=e.target.closest('[data-lg]');if(lg){const a=lg.dataset.lg;if(a==='vendas'||a==='contr'){LM=a;delete SORT.lista;render();go('.vr-list');}else{HIDE.has(a)?HIDE.delete(a):HIDE.add(a);render();}return;}
+    const th=e.target.closest('.vr-box[data-id] th');if(th){const id=th.closest('.vr-box').dataset.id,i=th.cellIndex,st=SORT[id];
+      SORT[id]=st&&st.i===i?{i,d:-st.d}:{i,d:th.classList.contains('n')?-1:1};applySort();}
+  });
   function render(){
     fillSel();
     const q=Q.toLowerCase();
     const R=D.filter(r=>pass(r)&&(!q||[r.nome,r.numero,r.produto,r.responsavel,r.equipe].join(' ').toLowerCase().includes(q)));
     const V=R.filter(r=>r.etapa==='Contrato Finalizado'), tot=V.reduce((a,r)=>a+val(r),0);
     const emc=R.filter(r=>CONTR.includes(r.etapa)).length, noMes=V.filter(r=>mv(r)===mesAtual).length;
-    $('.vr-k').innerHTML=[['Vendas realizadas',nf(V.length)],['Valor total vendido',brl(tot)],['Ticket médio',brl(V.length?tot/V.length:0)],
-      ['Vendas em '+mb(mesAtual),nf(noMes)],['Em contrato (a finalizar)',nf(emc)],['Conversão (vendas / cadastros)',pc(V.length,R.length)]]
-      .map(([l,v])=>`<div><span>${l}</span><b>${v}</b></div>`).join('');
+    const anyF=F.some(([k])=>SEL[k])||Q||LM!=='vendas';
+    $('.vr-k').innerHTML=[['Vendas realizadas',nf(V.length),'limpar',anyF?'Clique para limpar os filtros e ver todas as vendas':'Clique para ir à lista das vendas',false],
+      ['Valor total vendido',brl(tot),'valor','Clique para ver as vendas da maior para a menor',false],
+      ['Ticket médio',brl(V.length?tot/V.length:0),'ticket','Clique para ver a distribuição por faixa de valor',false],
+      ['Vendas em '+mb(mesAtual),nf(noMes),'mes','Clique para filtrar só o mês atual (de novo para tirar)',SEL.mv===mesAtual],
+      ['Em contrato (a finalizar)',nf(emc),'contr','Clique para listar os contratos em andamento (de novo para voltar às vendas)',LM==='contr'],
+      ['Conversão (vendas / cadastros)',pc(V.length,R.length),'conv','Clique para ver a conversão por empreendimento',false]]
+      .map(([l,v,a,t,on])=>`<div data-act="${a}" class="${on?'on':''}" title="${t}" role="button" tabindex="0"><span>${l}</span><b>${v}</b></div>`).join('');
     /* todos os empreendimentos do painel, mesmo sem venda (ignora o filtro de empreendimento para listar todos) */
     const RE=D.filter(r=>pass(r,'produto')&&(!q||[r.nome,r.numero,r.produto,r.responsavel,r.equipe].join(' ').toLowerCase().includes(q)));
     const E={}; opts(r=>r.produto).forEach(k=>E[k]={c:0,n:0,v:0,k:0});
     RE.forEach(r=>{const o=E[r.produto||NI]; o.c++; if(r.etapa==='Contrato Finalizado'){o.n++;o.v+=val(r);} else if(CONTR.includes(r.etapa)) o.k++;});
     const EV=Object.values(E).reduce((a,o)=>a+o.n,0);
     $('.vr-emp').innerHTML=`<h3>Todos os empreendimentos (${Object.keys(E).length}) — clique para filtrar${exBtns}</h3><table><thead><tr><th>Empreendimento</th><th class="n">Cadastros</th><th class="n">Vendas</th><th class="n">% das vendas</th><th class="n">Conversão</th><th class="n">Em contrato</th><th class="n">Valor vendido</th><th class="n">Ticket médio</th></tr></thead><tbody>`+
-      Object.entries(E).sort((a,b)=>b[1].n-a[1].n||b[1].c-a[1].c).map(([k,o])=>`<tr class="pick${o.n?'':' z'}" data-p="${esc(k)}"${SEL.produto===k?' style="outline:2px solid #1f3a68"':''}><td>${esc(k)}</td><td class="n">${nf(o.c)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,EV)}</td><td class="n">${pc(o.n,o.c)}</td><td class="n">${nf(o.k)}</td><td class="n">${brl(o.v)}</td><td class="n">${brl(o.n?o.v/o.n:0)}</td></tr>`).join('')+'</tbody></table>';
-    $('.vr-emp').querySelectorAll('tr.pick').forEach(tr=>tr.onclick=()=>{const k=tr.dataset.p;SEL.produto=SEL.produto===k?'':k;render();});
+      Object.entries(E).sort((a,b)=>b[1].n-a[1].n||b[1].c-a[1].c).map(([k,o])=>`<tr class="pick${o.n?'':' z'}${SEL.produto===k?' sel':''}" data-fk="produto" data-fv="${esc(k)}" title="Clique para filtrar a aba por ${esc(k)}"><td>${esc(k)}</td><td class="n">${nf(o.c)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,EV)}</td><td class="n">${pc(o.n,o.c)}</td><td class="n">${nf(o.k)}</td><td class="n">${brl(o.v)}</td><td class="n">${brl(o.n?o.v/o.n:0)}</td></tr>`).join('')+'</tbody></table>';
+    $('.vr-emp').dataset.id='emp';
     const meses=grp(V,mv).sort((a,b)=>b[0].localeCompare(a[0]));
-    $('.vr-g').innerHTML=tbl('Por mês da venda',meses,'Mês',V.length)+tbl('Por equipe / imobiliária',byN(grp(V,r=>r.equipe)),'Equipe',V.length)+
-      tbl('Por corretor',byN(grp(V,r=>r.responsavel)),'Corretor',V.length)+tbl('Por origem',byN(grp(V,r=>r.origem)),'Origem',V.length);
-    const L=V.slice().sort((a,b)=>key(b.ultima_atualizacao).localeCompare(key(a.ultima_atualizacao)));
-    $('.vr-list').innerHTML=`<h3>Lista das vendas (${nf(L.length)})${exBtns}</h3><table><thead><tr><th>Nº</th><th>Cliente</th><th>Empreendimento</th><th>Corretor</th><th>Equipe</th><th>Origem</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody>`+
-      (L.map(r=>`<tr><td>${esc(r.numero)}</td><td>${esc(r.nome)}</td><td>${esc(r.produto)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.equipe)}</td><td>${esc(r.origem)}</td><td class="n">${brl(val(r))}</td><td>${esc(r.cadastro)}</td><td>${esc(r.ultima_atualizacao)}</td></tr>`).join('')||'<tr><td colspan="9">Nenhuma venda no recorte.</td></tr>')+'</tbody></table>';
+    $('.vr-g').innerHTML=tbl('Por mês da venda',meses,'Mês',V.length,'mv')+tbl('Por equipe / imobiliária',byN(grp(V,r=>r.equipe)),'Equipe',V.length,'equipe')+
+      tbl('Por corretor',byN(grp(V,r=>r.responsavel)),'Corretor',V.length,'responsavel')+tbl('Por origem',byN(grp(V,r=>r.origem)),'Origem',V.length,'origem');
+    const LC=LM==='contr', L=(LC?R.filter(r=>CONTR.includes(r.etapa)):V).slice().sort((a,b)=>key(b.ultima_atualizacao).localeCompare(key(a.ultima_atualizacao)));
+    $('.vr-list').dataset.id='lista';
+    $('.vr-list').innerHTML=`<h3>${LC?'Contratos em andamento':'Lista das vendas'} (${nf(L.length)})${LC?' <button type="button" class="vr-xb" data-act="contr">← Voltar às vendas</button>':''}${exBtns}</h3><table><thead><tr><th>Nº</th><th>Cliente</th>${LC?'<th>Etapa</th>':''}<th>Empreendimento</th><th>Corretor</th><th>Equipe</th><th>Origem</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody>`+
+      (L.map(r=>`<tr class="pick" data-lead="${esc(r.lead_id)}" title="Clique para abrir a ficha"><td>${esc(r.numero)}</td><td>${esc(r.nome)}</td>${LC?`<td>${esc(r.etapa)}</td>`:''}<td>${esc(r.produto)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.equipe)}</td><td>${esc(r.origem)}</td><td class="n">${brl(val(r))}</td><td>${esc(r.cadastro)}</td><td>${esc(r.ultima_atualizacao)}</td></tr>`).join('')||`<tr><td colspan="${LC?10:9}">Nenhum cadastro no recorte.</td></tr>`)+'</tbody></table>';
     charts(V,R,E,EV);
+    applySort();
   }
   p.querySelector('.vr-f').addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.f;if(k){SEL[k]=e.target.value;render();}});
   $('.vr-f input').oninput=e=>{Q=e.target.value;render();};
@@ -2717,7 +2757,7 @@ ${x.b?`<rect x="${LW+wa}" y="${y+3}" width="${wb}" height="${RH-8}" rx="2" fill=
   const open=()=>{p.classList.add('on');p.scrollTop=0;render();document.documentElement.style.overflow='hidden';if(btn)btn.setAttribute('aria-selected','true');};
   $('.vr-x').onclick=close;
   let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{if(p.classList.contains('on'))render();},200);});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+  document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const fi=p.querySelector('.vr-fi');if(fi)fi.remove();else close();});
   const nav=document.getElementById('tabsIn')||document.getElementById('tabs')||document.querySelector('nav');
   if(!nav) return;
   const mount=()=>{
