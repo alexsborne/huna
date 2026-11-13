@@ -2486,8 +2486,10 @@ setTimeout(sizeHeader,300);
   const opts=g=>{const s=new Set();D.forEach(r=>s.add(g(r)||NI));return [...s].sort((a,b)=>/^\d{4}-\d\d$/.test(a)?b.localeCompare(a):a.localeCompare(b,'pt-BR',{numeric:true}));};
   const pass=(r,skip)=>F.every(([k,,g])=>k===skip||!SEL[k]||(g(r)||NI)===SEL[k]);
   const grp=(A,f)=>{const m={};A.forEach(r=>{const k=f(r)||NI;(m[k]=m[k]||{n:0,v:0}).n++;m[k].v+=val(r);});return Object.entries(m);};
+  /* ===== exportação Excel (.xlsx) e PDF, sem bibliotecas (13/11/2026) ===== */
+  const exBtns='<span class="vr-ex"><button type="button" class="vr-xb" data-x="xlsx" title="Baixar em Excel">Excel</button><button type="button" class="vr-xb" data-x="pdf" title="Baixar em PDF">PDF</button></span>';
   const byN=a=>a.sort((x,y)=>y[1].n-x[1].n||y[1].v-x[1].v);
-  const tbl=(t,rows,h,N)=>`<div class="vr-box"><h3>${t}</h3><table><thead><tr><th>${h}</th><th class="n">Vendas</th><th class="n">%</th><th class="n">Valor</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr><td>${esc(h==='Mês'?mb(k):k)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,N)}</td><td class="n">${brl(o.v)}</td></tr>`).join('')||'<tr><td colspan="4">Nenhuma venda no recorte.</td></tr>'}</tbody></table></div>`;
+  const tbl=(t,rows,h,N)=>`<div class="vr-box"><h3>${t}${exBtns}</h3><table><thead><tr><th>${h}</th><th class="n">Vendas</th><th class="n">%</th><th class="n">Valor</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr><td>${esc(h==='Mês'?mb(k):k)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,N)}</td><td class="n">${brl(o.v)}</td></tr>`).join('')||'<tr><td colspan="4">Nenhuma venda no recorte.</td></tr>'}</tbody></table></div>`;
 
   const st=document.createElement('style');
   st.textContent=`#vrPane{position:fixed;inset:0;z-index:99999;background:#f5f6f9;color:#1c2333;overflow:auto;display:none;font-family:inherit}
@@ -2497,6 +2499,9 @@ setTimeout(sizeHeader,300);
 #vrPane .vr-note{color:#5b6476;font-size:13px;margin:0 0 12px}
 #vrPane button.vr-x,#vrPane button.vr-cl{border:0;background:#1f3a68;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;cursor:pointer}
 #vrPane button.vr-cl{background:#e4e8f0;color:#1f3a68}
+#vrPane h3{display:flex;align-items:center;gap:8px;flex-wrap:wrap}#vrPane .vr-ex{margin-left:auto;display:inline-flex;gap:4px}
+#vrPane button.vr-xb{border:1px solid #cfd5e0;background:#fff;color:#1f3a68;border-radius:6px;padding:3px 9px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}#vrPane button.vr-xb:hover{background:#1f3a68;color:#fff}
+#vrPane .vr-all{margin-left:auto;font-size:13px;color:#5b6476;display:inline-flex;gap:6px;align-items:center}
 #vrPane .vr-f{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;align-items:end;background:#fff;border:1px solid #dde1ea;border-radius:12px;padding:12px;margin-bottom:14px}
 #vrPane .vr-f label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:#5b6476;text-transform:uppercase;letter-spacing:.04em}
 #vrPane select,#vrPane input{padding:7px 9px;border:1px solid #cfd5e0;border-radius:8px;font:inherit;font-size:13px;background:#fff;color:#1c2333;text-transform:none;letter-spacing:0;min-width:0}
@@ -2516,7 +2521,7 @@ setTimeout(sizeHeader,300);
   document.head.appendChild(st);
 
   const p=document.createElement('div'); p.id='vrPane'; p.setAttribute('role','tabpanel');
-  p.innerHTML=`<div class="vr-in"><div class="vr-hd"><h2>Vendas Realizadas — até ${esc(EXTR)}</h2><button class="vr-x" type="button">✕ Voltar ao painel</button></div>
+  p.innerHTML=`<div class="vr-in"><div class="vr-hd"><h2>Vendas Realizadas — até ${esc(EXTR)}</h2><span class="vr-all">Exportar todas as tabelas: <button type="button" class="vr-xb" data-x="xlsx">Excel</button><button type="button" class="vr-xb" data-x="pdf">PDF</button></span><button class="vr-x" type="button">✕ Voltar ao painel</button></div>
 <p class="vr-note">Venda = cadastro na etapa <b>Contrato Finalizado</b> do Imobmeet. "Mês da venda" = mês da última atualização do cadastro (aproximação da data da venda). Os filtros abaixo valem só para esta aba.</p>
 <div class="vr-f">${F.map(([k,l])=>`<label>${l}<select data-f="${k}"></select></label>`).join('')}<label>Busca<input type="search" placeholder="Cliente, nº, corretor…"></label><button class="vr-cl" type="button">Limpar filtros</button></div>
 <div class="vr-k"></div>
@@ -2548,20 +2553,101 @@ setTimeout(sizeHeader,300);
     const E={}; opts(r=>r.produto).forEach(k=>E[k]={c:0,n:0,v:0,k:0});
     RE.forEach(r=>{const o=E[r.produto||NI]; o.c++; if(r.etapa==='Contrato Finalizado'){o.n++;o.v+=val(r);} else if(CONTR.includes(r.etapa)) o.k++;});
     const EV=Object.values(E).reduce((a,o)=>a+o.n,0);
-    $('.vr-emp').innerHTML=`<h3>Todos os empreendimentos (${Object.keys(E).length}) — clique para filtrar</h3><table><thead><tr><th>Empreendimento</th><th class="n">Cadastros</th><th class="n">Vendas</th><th class="n">% das vendas</th><th class="n">Conversão</th><th class="n">Em contrato</th><th class="n">Valor vendido</th><th class="n">Ticket médio</th></tr></thead><tbody>`+
+    $('.vr-emp').innerHTML=`<h3>Todos os empreendimentos (${Object.keys(E).length}) — clique para filtrar${exBtns}</h3><table><thead><tr><th>Empreendimento</th><th class="n">Cadastros</th><th class="n">Vendas</th><th class="n">% das vendas</th><th class="n">Conversão</th><th class="n">Em contrato</th><th class="n">Valor vendido</th><th class="n">Ticket médio</th></tr></thead><tbody>`+
       Object.entries(E).sort((a,b)=>b[1].n-a[1].n||b[1].c-a[1].c).map(([k,o])=>`<tr class="pick${o.n?'':' z'}" data-p="${esc(k)}"${SEL.produto===k?' style="outline:2px solid #1f3a68"':''}><td>${esc(k)}</td><td class="n">${nf(o.c)}</td><td class="n">${nf(o.n)}</td><td class="n">${pc(o.n,EV)}</td><td class="n">${pc(o.n,o.c)}</td><td class="n">${nf(o.k)}</td><td class="n">${brl(o.v)}</td><td class="n">${brl(o.n?o.v/o.n:0)}</td></tr>`).join('')+'</tbody></table>';
     $('.vr-emp').querySelectorAll('tr.pick').forEach(tr=>tr.onclick=()=>{const k=tr.dataset.p;SEL.produto=SEL.produto===k?'':k;render();});
     const meses=grp(V,mv).sort((a,b)=>b[0].localeCompare(a[0]));
     $('.vr-g').innerHTML=tbl('Por mês da venda',meses,'Mês',V.length)+tbl('Por equipe / imobiliária',byN(grp(V,r=>r.equipe)),'Equipe',V.length)+
       tbl('Por corretor',byN(grp(V,r=>r.responsavel)),'Corretor',V.length)+tbl('Por origem',byN(grp(V,r=>r.origem)),'Origem',V.length);
     const L=V.slice().sort((a,b)=>key(b.ultima_atualizacao).localeCompare(key(a.ultima_atualizacao)));
-    $('.vr-list').innerHTML=`<h3>Lista das vendas (${nf(L.length)})</h3><table><thead><tr><th>Nº</th><th>Cliente</th><th>Empreendimento</th><th>Corretor</th><th>Equipe</th><th>Origem</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody>`+
+    $('.vr-list').innerHTML=`<h3>Lista das vendas (${nf(L.length)})${exBtns}</h3><table><thead><tr><th>Nº</th><th>Cliente</th><th>Empreendimento</th><th>Corretor</th><th>Equipe</th><th>Origem</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody>`+
       (L.map(r=>`<tr><td>${esc(r.numero)}</td><td>${esc(r.nome)}</td><td>${esc(r.produto)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.equipe)}</td><td>${esc(r.origem)}</td><td class="n">${brl(val(r))}</td><td>${esc(r.cadastro)}</td><td>${esc(r.ultima_atualizacao)}</td></tr>`).join('')||'<tr><td colspan="9">Nenhuma venda no recorte.</td></tr>')+'</tbody></table>';
   }
   p.querySelector('.vr-f').addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.f;if(k){SEL[k]=e.target.value;render();}});
   $('.vr-f input').oninput=e=>{Q=e.target.value;render();};
   $('.vr-cl').onclick=()=>{F.forEach(([k])=>SEL[k]='');Q='';$('.vr-f input').value='';render();};
   render();
+  const filtTxt=()=>{const a=F.filter(([k])=>SEL[k]).map(([k,l])=>l+': '+(/^\d{4}-\d\d$/.test(SEL[k])?mb(SEL[k]):SEL[k]));if(Q)a.push('Busca: '+Q);return a.length?a.join(' · '):'nenhum';};
+  /* lê uma tabela da tela: título, cabeçalho, linhas, colunas numéricas */
+  function grab(box){const t=box.querySelector('table'),h3=box.querySelector('h3');
+    const ttl=(h3?h3.firstChild.textContent:'Tabela').replace(/ — clique para filtrar/,'').trim();
+    const ths=[...t.querySelectorAll('thead th')], hd=ths.map(x=>x.textContent.trim()), num=ths.map(x=>x.classList.contains('n'));
+    const rows=[...t.querySelectorAll('tbody tr')].filter(tr=>tr.cells.length===hd.length).map(tr=>[...tr.cells].map(c=>c.textContent.trim()));
+    return {ttl,hd,num,rows};}
+  function allTables(){const k=[...p.querySelectorAll('.vr-k div')].map(d=>[d.querySelector('span').textContent,d.querySelector('b').textContent]);
+    return [{ttl:'Resumo',hd:['Indicador','Valor'],num:[false,true],rows:k}].concat([...p.querySelectorAll('.vr-box')].filter(b=>b.querySelector('table')).map(grab));}
+  /* "R$ 1.234,56" / "12,3%" / "1.234" -> número + formato */
+  function cellVal(s){s=String(s).replace(/ /g,' ').trim();let m;
+    if((m=/^(-?)R\$ ?([\d.]+,\d{2})$/.exec(s)))return {v:+(m[1]+m[2].replace(/\./g,'').replace(',','.')),f:1};
+    if((m=/^(-?[\d.]*\d(?:,\d+)?)%$/.exec(s)))return {v:+m[1].replace(/\./g,'').replace(',','.')/100,f:2};
+    if(/^-?\d{1,3}(\.\d{3})*$/.test(s)||/^-?\d+$/.test(s))return {v:+s.replace(/\./g,''),f:0};
+    return null;}
+  const fname=(t,ext)=>'vendas_realizadas_'+t.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')+'_'+EXTR.slice(0,10).split('/').reverse().join('-')+'.'+ext;
+  function save(bytes,name,mime){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);}
+  /* --- ZIP (sem compressão) --- */
+  const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+  const crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRC[(c^u[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};
+  function zip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+    const h16=(a,v)=>a.push(v&255,(v>>>8)&255),h32=(a,v)=>a.push(v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255);
+    files.forEach(([n,s])=>{const nm=enc.encode(n),d=enc.encode(s),c=crc32(d),L=[];
+      h32(L,0x04034b50);h16(L,20);h16(L,0x0800);h16(L,0);h16(L,0);h16(L,0x21);h32(L,c);h32(L,d.length);h32(L,d.length);h16(L,nm.length);h16(L,0);
+      const C=[];h32(C,0x02014b50);h16(C,20);h16(C,20);h16(C,0x0800);h16(C,0);h16(C,0);h16(C,0x21);h32(C,c);h32(C,d.length);h32(C,d.length);h16(C,nm.length);h16(C,0);h16(C,0);h16(C,0);h16(C,0);h32(C,0);h32(C,off);
+      parts.push(new Uint8Array(L),nm,d);cd.push(new Uint8Array(C),nm);off+=L.length+nm.length+d.length;});
+    const cs=cd.reduce((a,u)=>a+u.length,0),E=[];h32(E,0x06054b50);h16(E,0);h16(E,0);h16(E,files.length);h16(E,files.length);h32(E,cs);h32(E,off);h16(E,0);
+    const all=parts.concat(cd,[new Uint8Array(E)]),out=new Uint8Array(all.reduce((a,u)=>a+u.length,0));let o=0;all.forEach(u=>{out.set(u,o);o+=u.length;});return out;}
+  /* --- XLSX --- */
+  const xe=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'');
+  const col=i=>{let s='';i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=(i-m-1)/26;}return s;};
+  function sheetXml(T){let r=0;const row=cells=>{r++;return `<row r="${r}">`+cells.map((c,i)=>c==null?'':c.n!=null?`<c r="${col(i)}${r}" s="${c.s}"><v>${c.n}</v></c>`:`<c r="${col(i)}${r}" t="inlineStr" s="${c.s||0}"><is><t xml:space="preserve">${xe(c.t)}</t></is></c>`).join('')+'</row>';};
+    let x=row([{t:T.ttl+' — Vendas Realizadas',s:5}])+row([{t:'Dados do Imobmeet até '+EXTR+' · Filtros: '+filtTxt(),s:0}])+row([]);
+    x+=row(T.hd.map(h=>({t:h,s:4})));
+    T.rows.forEach(rw=>{x+=row(rw.map((v,i)=>{const c=T.num[i]?cellVal(v):null;return c?{n:c.v,s:c.f===1?1:c.f===2?2:3}:{t:v,s:0};}));});
+    const w=T.hd.map((h,i)=>Math.min(60,Math.max(h.length,...T.rows.map(rw=>String(rw[i]).length))+2));
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${w.map((v,i)=>`<col min="${i+1}" max="${i+1}" width="${v}" customWidth="1"/>`).join('')}</cols><sheetData>${x}</sheetData></worksheet>`;}
+  function xlsx(TS,name){const used=new Set();const nm=TS.map(T=>{let s=T.ttl.replace(/[\[\]:*?\/\\]/g,' ').replace(/\s*\(\d[\d.]*\)\s*$/,'').slice(0,31).trim()||'Tabela',b=s,i=2;while(used.has(s.toLowerCase()))s=b.slice(0,28)+' '+i++;used.add(s.toLowerCase());return s;});
+    const H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    const ct=H+`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${TS.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`;
+    const rels=H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>';
+    const wb=H+`<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${nm.map((n,i)=>`<sheet name="${xe(n)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`;
+    const wr=H+`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${TS.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${TS.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+    const st=H+'<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="&quot;R$&quot;\\ #,##0.00"/><numFmt numFmtId="165" formatCode="0.0%"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="14"/><color rgb="FF1F3A68"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1F3A68"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="6"><xf/><xf numFmtId="164" applyNumberFormat="1"/><xf numFmtId="165" applyNumberFormat="1"/><xf numFmtId="3" applyNumberFormat="1"/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/><xf fontId="2" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    save(zip([['[Content_Types].xml',ct],['_rels/.rels',rels],['xl/workbook.xml',wb],['xl/_rels/workbook.xml.rels',wr],['xl/styles.xml',st]].concat(TS.map((T,i)=>['xl/worksheets/sheet'+(i+1)+'.xml',sheetXml(T)]))),name,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');}
+  /* --- PDF (A4 paisagem, Helvetica WinAnsi) --- */
+  const W1252={0x20AC:128,0x201A:130,0x0192:131,0x201E:132,0x2026:133,0x2020:134,0x2021:135,0x02C6:136,0x2030:137,0x0160:138,0x2039:139,0x0152:140,0x017D:142,0x2018:145,0x2019:146,0x201C:147,0x201D:148,0x2022:149,0x2013:150,0x2014:151,0x02DC:152,0x2122:153,0x0161:154,0x203A:155,0x0153:156,0x017E:158,0x0178:159};
+  const pdfStr=s=>[...String(s).replace(/ /g,' ')].map(ch=>{let c=ch.charCodeAt(0);c=c<256?c:(W1252[c]||63);const b=String.fromCharCode(c);return b==='('||b===')'||b==='\\'?'\\'+b:b;}).join('');
+  const cw=ch=>(ch===' '?.278:/[il.,:;'|!]/.test(ch)?.278:/[ftrj()\[\]\/-]/.test(ch)?.333:/[mM]/.test(ch)?.833:/[wW]/.test(ch)?.9:/[A-ZÀ-Ý]/.test(ch)?.722:.556)*1.04;
+  const tw=(s,sz)=>[...String(s)].reduce((a,c)=>a+cw(c),0)*sz;
+  const fit=(s,w,sz)=>{s=String(s).replace(/ /g,' ');if(tw(s,sz)<=w)return s;while(s.length>1&&tw(s+'…',sz)>w)s=s.slice(0,-1);return s+'…';};
+  function pdf(TS,name){const PW=842,PH=595,M=30,FS=8,RH=13,pages=[];
+    const sub='Dados do Imobmeet até '+EXTR+'  ·  Filtros: '+filtTxt();
+    TS.forEach(T=>{const nat=T.hd.map((h,i)=>Math.max(tw(h,FS)+10,...T.rows.slice(0,400).map(r=>tw(r[i],FS)+10)));
+      const tot=nat.reduce((a,b)=>a+b,0),avail=PW-2*M;let w=nat.slice();
+      if(tot>avail){const cap=avail/T.hd.length,small=nat.filter(x=>x<=cap).reduce((a,b)=>a+b,0),big=nat.filter(x=>x>cap).reduce((a,b)=>a+b,0);w=nat.map(x=>x<=cap?x:x*(avail-small)/big);}
+      let i=0,first=true;
+      do{let o='',y=PH-M;
+        o+=`BT /F2 13 Tf 0.122 0.227 0.408 rg ${M} ${y-10} Td (${pdfStr(T.ttl+(first?'':' (continuação)'))}) Tj ET\n`;y-=24;
+        o+=`BT /F1 8 Tf 0.36 0.39 0.46 rg ${M} ${y} Td (${pdfStr(fit(sub,PW-2*M,8))}) Tj ET\n`;y-=14;
+        o+=`0.122 0.227 0.408 rg ${M} ${y-RH+3} ${PW-2*M} ${RH} re f\n`;let x=M;
+        T.hd.forEach((h,j)=>{const s=fit(h,w[j]-8,FS),tx=T.num[j]?x+w[j]-4-tw(s,FS):x+4;o+=`BT /F2 ${FS} Tf 1 1 1 rg ${tx.toFixed(1)} ${y-RH+7} Td (${pdfStr(s)}) Tj ET\n`;x+=w[j];});y-=RH;
+        if(!T.rows.length)o+=`BT /F1 ${FS} Tf 0 0 0 rg ${M+4} ${y-RH+7} Td (${pdfStr('Nenhuma venda no recorte.')}) Tj ET\n`;
+        let n=0;
+        while(i<T.rows.length&&y-RH>M+14){const r=T.rows[i];if(n%2)o+=`0.965 0.969 0.98 rg ${M} ${y-RH+3} ${PW-2*M} ${RH} re f\n`;
+          x=M;r.forEach((v,j)=>{const s=fit(v,w[j]-8,FS),tx=T.num[j]?x+w[j]-4-tw(s,FS):x+4;o+=`BT /F1 ${FS} Tf 0.11 0.137 0.2 rg ${tx.toFixed(1)} ${y-RH+7} Td (${pdfStr(s)}) Tj ET\n`;x+=w[j];});
+          y-=RH;i++;n++;}
+        pages.push(o);first=false;}while(i<T.rows.length);});
+    const objs=[],add=s=>{objs.push(s);return objs.length;};
+    const f1=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'),f2=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    const pagesId=add('');const kids=[];
+    pages.forEach((o,k)=>{o+=`BT /F1 7 Tf 0.5 0.5 0.5 rg ${M} 16 Td (${pdfStr('Nexo Gestão Imobiliária · Funil de Venda · Vendas Realizadas')}) Tj ET\nBT /F1 7 Tf 0.5 0.5 0.5 rg ${PW-M-60} 16 Td (${pdfStr('Página '+(k+1)+' de '+pages.length)}) Tj ET\n`;
+      const c=add(`<< /Length ${o.length} >>\nstream\n${o}endstream`);kids.push(add(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${PW} ${PH}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> >> /Contents ${c} 0 R >>`));});
+    objs[pagesId-1]=`<< /Type /Pages /Kids [${kids.map(k=>k+' 0 R').join(' ')}] /Count ${kids.length} >>`;
+    const cat=add(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`),info=add(`<< /Title (${pdfStr('Vendas Realizadas')}) /Producer (Nexo) >>`);
+    let s='%PDF-1.4\n%\xe2\xe3\xcf\xd3\n';const off=[];objs.forEach((o,k)=>{off.push(s.length);s+=`${k+1} 0 obj\n${o}\nendobj\n`;});
+    const xr=s.length;s+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+off.map(v=>String(v).padStart(10,'0')+' 00000 n \n').join('')+`trailer\n<< /Size ${objs.length+1} /Root ${cat} 0 R /Info ${info} 0 R >>\nstartxref\n${xr}\n%%EOF`;
+    const u=new Uint8Array(s.length);for(let k=0;k<s.length;k++)u[k]=s.charCodeAt(k)&255;save(u,name,'application/pdf');}
+  p.addEventListener('click',e=>{const b=e.target.closest('[data-x]');if(!b)return;e.stopPropagation();
+    const box=b.closest('.vr-box');const TS=box?[grab(box)]:allTables();const t=box?TS[0].ttl:'todas_as_tabelas';
+    (b.dataset.x==='pdf'?pdf:xlsx)(TS,fname(t,b.dataset.x));});
 
   let btn=null;
   const close=()=>{p.classList.remove('on');document.documentElement.style.overflow='';if(btn)btn.setAttribute('aria-selected','false');};
