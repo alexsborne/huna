@@ -546,5 +546,79 @@ function render(){
 }
 fillSelects(); render();
 </script>
-</body>
+<!--ABA_VENDAS--><script>/* Aba "Vendas Realizadas" — componente independente, injetado por src/inject_aba_vendas.py.
+   Venda = cadastro na etapa "Contrato Finalizado" do Imobmeet. */
+(function(){
+  const EXTR='13/11/2026 09:28';
+  const D=(typeof DATA!=='undefined'?DATA:(typeof RAW!=='undefined'?RAW:[]));
+  const V=D.filter(r=>r.etapa==='Contrato Finalizado');
+  const EMC=D.filter(r=>['Elaboração Contrato','Enviado para assinatura','Contrato c/pendência','Devolvido Ass. Cliente'].includes(r.etapa)).length;
+  const brl=n=>(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const nf=n=>(n||0).toLocaleString('pt-BR');
+  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const ym=s=>{const m=/(\d\d)\/(\d\d)\/(\d{4})/.exec(s||'');return m?m[3]+'-'+m[2]:'';};
+  const key=s=>{const m=/(\d\d)\/(\d\d)\/(\d{4}) ?(\d\d:\d\d)?/.exec(s||'');return m?m[3]+m[2]+m[1]+(m[4]||''):'';};
+  const tot=V.reduce((a,r)=>a+(+r.valor_negocio||0),0);
+  const mesAtual=ym(EXTR), noMes=V.filter(r=>ym(r.ultima_atualizacao)===mesAtual);
+  const grp=(f)=>{const m={};V.forEach(r=>{const k=f(r)||'(não informado)';(m[k]=m[k]||{n:0,v:0}).n++;m[k].v+=(+r.valor_negocio||0);});return Object.entries(m);};
+  const tbl=(t,rows,h)=>`<div class="vr-box"><h3>${t}</h3><table><thead><tr><th>${h}</th><th class="n">Vendas</th><th class="n">%</th><th class="n">Valor</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr><td>${esc(k)}</td><td class="n">${nf(o.n)}</td><td class="n">${V.length?(100*o.n/V.length).toFixed(1).replace('.',','):0}%</td><td class="n">${brl(o.v)}</td></tr>`).join('')}</tbody></table></div>`;
+  const byN=a=>a.sort((x,y)=>y[1].n-x[1].n||y[1].v-x[1].v);
+  const meses=grp(r=>{const k=ym(r.ultima_atualizacao);return k?k.slice(5)+'/'+k.slice(0,4):'';}).sort((a,b)=>(b[0].slice(3)+b[0].slice(0,2)).localeCompare(a[0].slice(3)+a[0].slice(0,2)));
+  const lista=V.slice().sort((a,b)=>key(b.ultima_atualizacao).localeCompare(key(a.ultima_atualizacao)));
+
+  const st=document.createElement('style');
+  st.textContent=`#vrPane{position:fixed;inset:0;z-index:99999;background:#f5f6f9;color:#1c2333;overflow:auto;display:none;font-family:inherit}
+#vrPane.on{display:block}#vrPane .vr-in{max-width:1280px;margin:0 auto;padding:20px 18px 60px}
+#vrPane .vr-hd{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
+#vrPane h2{margin:0;font-size:22px}#vrPane h3{margin:0 0 8px;font-size:15px}
+#vrPane .vr-note{color:#5b6476;font-size:13px;margin:0 0 16px}
+#vrPane button.vr-x{border:0;background:#1f3a68;color:#fff;border-radius:8px;padding:8px 16px;font:inherit;cursor:pointer}
+#vrPane .vr-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+#vrPane .vr-k div,#vrPane .vr-box{background:#fff;border:1px solid #dde1ea;border-radius:12px;padding:14px}
+#vrPane .vr-k b{display:block;font-size:26px;color:#1f3a68}#vrPane .vr-k span{font-size:12px;color:#5b6476;text-transform:uppercase;letter-spacing:.04em}
+#vrPane .vr-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:12px;margin-bottom:16px}
+#vrPane .vr-box{overflow:auto;max-height:420px}#vrPane table{width:100%;border-collapse:collapse;font-size:13px}
+#vrPane th,#vrPane td{padding:6px 8px;border-bottom:1px solid #eceef3;text-align:left;white-space:nowrap}
+#vrPane th{position:sticky;top:0;background:#fff!important;color:#5b6476!important;font-weight:600;font-size:12px;height:auto!important}#vrPane td{color:#1c2333!important;background:transparent}#vrPane td:first-child{white-space:normal;min-width:140px}#vrPane td.n,#vrPane th.n{text-align:right}
+#vrPane tbody tr:nth-child(even){background:#f8f9fb}#vrPane .vr-list{max-height:none}
+#vrPane input{padding:8px 10px;border:1px solid #cfd5e0;border-radius:8px;font:inherit;width:min(360px,100%);margin-bottom:8px}`;
+  document.head.appendChild(st);
+
+  const p=document.createElement('div'); p.id='vrPane'; p.setAttribute('role','tabpanel');
+  p.innerHTML=`<div class="vr-in"><div class="vr-hd"><h2>Vendas Realizadas — até ${esc(EXTR)}</h2><button class="vr-x" type="button">✕ Voltar ao painel</button></div>
+<p class="vr-note">Venda = cadastro na etapa <b>Contrato Finalizado</b> do Imobmeet (base completa deste painel, sem filtros). O mês é o da última atualização do cadastro, usado como aproximação da data da venda.</p>
+<div class="vr-k"><div><span>Vendas realizadas</span><b>${nf(V.length)}</b></div><div><span>Valor total vendido</span><b>${brl(tot)}</b></div>
+<div><span>Ticket médio</span><b>${brl(V.length?tot/V.length:0)}</b></div><div><span>Vendas em ${esc(mesAtual.slice(5)+'/'+mesAtual.slice(0,4))}</span><b>${nf(noMes.length)}</b></div>
+<div><span>Em contrato (a finalizar)</span><b>${nf(EMC)}</b></div></div>
+<div class="vr-g">${tbl('Por produto',byN(grp(r=>r.produto)),'Produto')}${tbl('Por mês',meses,'Mês')}${tbl('Por equipe / imobiliária',byN(grp(r=>r.equipe)),'Equipe')}${tbl('Por corretor',byN(grp(r=>r.responsavel)),'Corretor')}</div>
+<div class="vr-box vr-list"><h3>Lista das vendas (${nf(V.length)})</h3><input type="search" placeholder="Buscar cliente, produto, corretor, equipe…" aria-label="Buscar venda">
+<table><thead><tr><th>Nº</th><th>Cliente</th><th>Produto</th><th>Corretor</th><th>Equipe</th><th class="n">Valor</th><th>Cadastro</th><th>Última atualização</th></tr></thead><tbody></tbody></table></div></div>`;
+  const tb=p.querySelector('.vr-list tbody');
+  const draw=q=>{q=(q||'').toLowerCase();tb.innerHTML=lista.filter(r=>!q||[r.nome,r.produto,r.responsavel,r.equipe,r.numero].join(' ').toLowerCase().includes(q)).map(r=>`<tr><td>${esc(r.numero)}</td><td>${esc(r.nome)}</td><td>${esc(r.produto)}</td><td>${esc(r.responsavel)}</td><td>${esc(r.equipe)}</td><td class="n">${brl(+r.valor_negocio)}</td><td>${esc(r.cadastro)}</td><td>${esc(r.ultima_atualizacao)}</td></tr>`).join('');};
+  draw(''); p.querySelector('input').oninput=e=>draw(e.target.value);
+  document.body.appendChild(p);
+
+  let btn=null;
+  const close=()=>{p.classList.remove('on');document.documentElement.style.overflow='';if(btn)btn.setAttribute('aria-selected','false');};
+  const open=()=>{p.classList.add('on');p.scrollTop=0;document.documentElement.style.overflow='hidden';if(btn)btn.setAttribute('aria-selected','true');};
+  p.querySelector('.vr-x').onclick=close;
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')close();});
+  const nav=document.getElementById('tabsIn')||document.getElementById('tabs')||document.querySelector('nav');
+  if(!nav) return;
+  const mount=()=>{
+    if(nav.querySelector('[data-vr]')) return;
+    const ref=nav.firstElementChild, a=ref&&ref.tagName==='A';
+    btn=document.createElement(a?'a':'button');
+    if(a) btn.href='#vendas-realizadas'; else btn.type='button';
+    if(ref&&ref.className) btn.className=ref.className;
+    btn.setAttribute('role','tab'); btn.setAttribute('aria-selected',String(p.classList.contains('on'))); btn.dataset.vr='1';
+    btn.textContent='Vendas Realizadas';
+    btn.onclick=e=>{e.preventDefault();e.stopPropagation();open();};
+    nav.appendChild(btn);
+  };
+  nav.addEventListener('click',e=>{if(!e.target.closest('[data-vr]'))close();});
+  mount(); new MutationObserver(mount).observe(nav,{childList:true});
+  if(location.hash==='#vendas-realizadas') open();
+})();
+</script><!--/ABA_VENDAS--></body>
 </html>
